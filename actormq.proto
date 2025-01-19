@@ -1,0 +1,14 @@
+syntax = "proto3";
+package actormq;
+option go_package = "github.com/troygilman0/actormq";
+
+message PID {
+    string address = 1;
+	string ID = 2;
+}
+
+message RegisterNode {}
+
+message ActiveNodes {
+	repeated PID nodes = 1;
+}
