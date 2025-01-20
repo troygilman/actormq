@@ -7,6 +7,8 @@ require (
 	google.golang.org/protobuf v1.32.0
 )
 
+replace github.com/anthdm/hollywood => github.com/troygilman0/hollywood v1.0.2
+
 require (
 	github.com/DataDog/gostackparse v0.7.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

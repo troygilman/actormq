@@ -152,6 +152,418 @@ func (x *ActiveNodes) GetNodes() []*PID {
 	return nil
 }
 
+type LogEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Command       string                 `protobuf:"bytes,1,opt,name=command,proto3" json:"command,omitempty"`
+	Term          uint64                 `protobuf:"varint,2,opt,name=term,proto3" json:"term,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogEntry) Reset() {
+	*x = LogEntry{}
+	mi := &file_actormq_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogEntry) ProtoMessage() {}
+
+func (x *LogEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_actormq_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogEntry.ProtoReflect.Descriptor instead.
+func (*LogEntry) Descriptor() ([]byte, []int) {
+	return file_actormq_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *LogEntry) GetCommand() string {
+	if x != nil {
+		return x.Command
+	}
+	return ""
+}
+
+func (x *LogEntry) GetTerm() uint64 {
+	if x != nil {
+		return x.Term
+	}
+	return 0
+}
+
+type AppendEntries struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Term          uint64                 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
+	LeaderPID     *PID                   `protobuf:"bytes,2,opt,name=leaderPID,proto3" json:"leaderPID,omitempty"`
+	PrevLogIndex  uint64                 `protobuf:"varint,3,opt,name=prevLogIndex,proto3" json:"prevLogIndex,omitempty"`
+	PrevLogTerm   uint64                 `protobuf:"varint,4,opt,name=prevLogTerm,proto3" json:"prevLogTerm,omitempty"`
+	LeaderCommit  uint64                 `protobuf:"varint,5,opt,name=leaderCommit,proto3" json:"leaderCommit,omitempty"`
+	Entries       []*LogEntry            `protobuf:"bytes,6,rep,name=entries,proto3" json:"entries,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AppendEntries) Reset() {
+	*x = AppendEntries{}
+	mi := &file_actormq_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AppendEntries) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AppendEntries) ProtoMessage() {}
+
+func (x *AppendEntries) ProtoReflect() protoreflect.Message {
+	mi := &file_actormq_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AppendEntries.ProtoReflect.Descriptor instead.
+func (*AppendEntries) Descriptor() ([]byte, []int) {
+	return file_actormq_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *AppendEntries) GetTerm() uint64 {
+	if x != nil {
+		return x.Term
+	}
+	return 0
+}
+
+func (x *AppendEntries) GetLeaderPID() *PID {
+	if x != nil {
+		return x.LeaderPID
+	}
+	return nil
+}
+
+func (x *AppendEntries) GetPrevLogIndex() uint64 {
+	if x != nil {
+		return x.PrevLogIndex
+	}
+	return 0
+}
+
+func (x *AppendEntries) GetPrevLogTerm() uint64 {
+	if x != nil {
+		return x.PrevLogTerm
+	}
+	return 0
+}
+
+func (x *AppendEntries) GetLeaderCommit() uint64 {
+	if x != nil {
+		return x.LeaderCommit
+	}
+	return 0
+}
+
+func (x *AppendEntries) GetEntries() []*LogEntry {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+type AppendEntriesResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PID           *PID                   `protobuf:"bytes,1,opt,name=PID,proto3" json:"PID,omitempty"`
+	Term          uint64                 `protobuf:"varint,2,opt,name=term,proto3" json:"term,omitempty"`
+	Success       bool                   `protobuf:"varint,3,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AppendEntriesResult) Reset() {
+	*x = AppendEntriesResult{}
+	mi := &file_actormq_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AppendEntriesResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AppendEntriesResult) ProtoMessage() {}
+
+func (x *AppendEntriesResult) ProtoReflect() protoreflect.Message {
+	mi := &file_actormq_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AppendEntriesResult.ProtoReflect.Descriptor instead.
+func (*AppendEntriesResult) Descriptor() ([]byte, []int) {
+	return file_actormq_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *AppendEntriesResult) GetPID() *PID {
+	if x != nil {
+		return x.PID
+	}
+	return nil
+}
+
+func (x *AppendEntriesResult) GetTerm() uint64 {
+	if x != nil {
+		return x.Term
+	}
+	return 0
+}
+
+func (x *AppendEntriesResult) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type RequestVote struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Term          uint64                 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
+	CandidatePID  *PID                   `protobuf:"bytes,2,opt,name=candidatePID,proto3" json:"candidatePID,omitempty"`
+	LastLogIndex  uint64                 `protobuf:"varint,3,opt,name=lastLogIndex,proto3" json:"lastLogIndex,omitempty"`
+	LastLogTerm   uint64                 `protobuf:"varint,4,opt,name=lastLogTerm,proto3" json:"lastLogTerm,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestVote) Reset() {
+	*x = RequestVote{}
+	mi := &file_actormq_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestVote) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestVote) ProtoMessage() {}
+
+func (x *RequestVote) ProtoReflect() protoreflect.Message {
+	mi := &file_actormq_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestVote.ProtoReflect.Descriptor instead.
+func (*RequestVote) Descriptor() ([]byte, []int) {
+	return file_actormq_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *RequestVote) GetTerm() uint64 {
+	if x != nil {
+		return x.Term
+	}
+	return 0
+}
+
+func (x *RequestVote) GetCandidatePID() *PID {
+	if x != nil {
+		return x.CandidatePID
+	}
+	return nil
+}
+
+func (x *RequestVote) GetLastLogIndex() uint64 {
+	if x != nil {
+		return x.LastLogIndex
+	}
+	return 0
+}
+
+func (x *RequestVote) GetLastLogTerm() uint64 {
+	if x != nil {
+		return x.LastLogTerm
+	}
+	return 0
+}
+
+type RequestVoteResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Term          uint64                 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
+	VoteGranted   bool                   `protobuf:"varint,2,opt,name=voteGranted,proto3" json:"voteGranted,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestVoteResult) Reset() {
+	*x = RequestVoteResult{}
+	mi := &file_actormq_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestVoteResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestVoteResult) ProtoMessage() {}
+
+func (x *RequestVoteResult) ProtoReflect() protoreflect.Message {
+	mi := &file_actormq_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestVoteResult.ProtoReflect.Descriptor instead.
+func (*RequestVoteResult) Descriptor() ([]byte, []int) {
+	return file_actormq_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *RequestVoteResult) GetTerm() uint64 {
+	if x != nil {
+		return x.Term
+	}
+	return 0
+}
+
+func (x *RequestVoteResult) GetVoteGranted() bool {
+	if x != nil {
+		return x.VoteGranted
+	}
+	return false
+}
+
+type Command struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Command       string                 `protobuf:"bytes,1,opt,name=command,proto3" json:"command,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Command) Reset() {
+	*x = Command{}
+	mi := &file_actormq_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Command) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Command) ProtoMessage() {}
+
+func (x *Command) ProtoReflect() protoreflect.Message {
+	mi := &file_actormq_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Command.ProtoReflect.Descriptor instead.
+func (*Command) Descriptor() ([]byte, []int) {
+	return file_actormq_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *Command) GetCommand() string {
+	if x != nil {
+		return x.Command
+	}
+	return ""
+}
+
+type CommandResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	RedirectPID   *PID                   `protobuf:"bytes,2,opt,name=redirectPID,proto3" json:"redirectPID,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CommandResult) Reset() {
+	*x = CommandResult{}
+	mi := &file_actormq_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CommandResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CommandResult) ProtoMessage() {}
+
+func (x *CommandResult) ProtoReflect() protoreflect.Message {
+	mi := &file_actormq_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CommandResult.ProtoReflect.Descriptor instead.
+func (*CommandResult) Descriptor() ([]byte, []int) {
+	return file_actormq_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *CommandResult) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *CommandResult) GetRedirectPID() *PID {
+	if x != nil {
+		return x.RedirectPID
+	}
+	return nil
+}
+
 var File_actormq_proto protoreflect.FileDescriptor
 
 var file_actormq_proto_rawDesc = []byte{
@@ -163,10 +575,57 @@ var file_actormq_proto_rawDesc = []byte{
 	0x69, 0x73, 0x74, 0x65, 0x72, 0x4e, 0x6f, 0x64, 0x65, 0x22, 0x31, 0x0a, 0x0b, 0x41, 0x63, 0x74,
 	0x69, 0x76, 0x65, 0x4e, 0x6f, 0x64, 0x65, 0x73, 0x12, 0x22, 0x0a, 0x05, 0x6e, 0x6f, 0x64, 0x65,
 	0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x6d,
-	0x71, 0x2e, 0x50, 0x49, 0x44, 0x52, 0x05, 0x6e, 0x6f, 0x64, 0x65, 0x73, 0x42, 0x20, 0x5a, 0x1e,
-	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x74, 0x72, 0x6f, 0x79, 0x67,
-	0x69, 0x6c, 0x6d, 0x61, 0x6e, 0x30, 0x2f, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x6d, 0x71, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x71, 0x2e, 0x50, 0x49, 0x44, 0x52, 0x05, 0x6e, 0x6f, 0x64, 0x65, 0x73, 0x22, 0x38, 0x0a, 0x08,
+	0x4c, 0x6f, 0x67, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x6f, 0x6d, 0x6d,
+	0x61, 0x6e, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x63, 0x6f, 0x6d, 0x6d, 0x61,
+	0x6e, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x22, 0xe6, 0x01, 0x0a, 0x0d, 0x41, 0x70, 0x70, 0x65, 0x6e,
+	0x64, 0x45, 0x6e, 0x74, 0x72, 0x69, 0x65, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x2a, 0x0a, 0x09,
+	0x6c, 0x65, 0x61, 0x64, 0x65, 0x72, 0x50, 0x49, 0x44, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x0c, 0x2e, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x6d, 0x71, 0x2e, 0x50, 0x49, 0x44, 0x52, 0x09, 0x6c,
+	0x65, 0x61, 0x64, 0x65, 0x72, 0x50, 0x49, 0x44, 0x12, 0x22, 0x0a, 0x0c, 0x70, 0x72, 0x65, 0x76,
+	0x4c, 0x6f, 0x67, 0x49, 0x6e, 0x64, 0x65, 0x78, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0c,
+	0x70, 0x72, 0x65, 0x76, 0x4c, 0x6f, 0x67, 0x49, 0x6e, 0x64, 0x65, 0x78, 0x12, 0x20, 0x0a, 0x0b,
+	0x70, 0x72, 0x65, 0x76, 0x4c, 0x6f, 0x67, 0x54, 0x65, 0x72, 0x6d, 0x18, 0x04, 0x20, 0x01, 0x28,
+	0x04, 0x52, 0x0b, 0x70, 0x72, 0x65, 0x76, 0x4c, 0x6f, 0x67, 0x54, 0x65, 0x72, 0x6d, 0x12, 0x22,
+	0x0a, 0x0c, 0x6c, 0x65, 0x61, 0x64, 0x65, 0x72, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x18, 0x05,
+	0x20, 0x01, 0x28, 0x04, 0x52, 0x0c, 0x6c, 0x65, 0x61, 0x64, 0x65, 0x72, 0x43, 0x6f, 0x6d, 0x6d,
+	0x69, 0x74, 0x12, 0x2b, 0x0a, 0x07, 0x65, 0x6e, 0x74, 0x72, 0x69, 0x65, 0x73, 0x18, 0x06, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x6d, 0x71, 0x2e, 0x4c, 0x6f,
+	0x67, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x07, 0x65, 0x6e, 0x74, 0x72, 0x69, 0x65, 0x73, 0x22,
+	0x63, 0x0a, 0x13, 0x41, 0x70, 0x70, 0x65, 0x6e, 0x64, 0x45, 0x6e, 0x74, 0x72, 0x69, 0x65, 0x73,
+	0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x1e, 0x0a, 0x03, 0x50, 0x49, 0x44, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x6d, 0x71, 0x2e, 0x50, 0x49,
+	0x44, 0x52, 0x03, 0x50, 0x49, 0x44, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x04, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75,
+	0x63, 0x63, 0x65, 0x73, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63,
+	0x63, 0x65, 0x73, 0x73, 0x22, 0x99, 0x01, 0x0a, 0x0b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x56, 0x6f, 0x74, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x04, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x30, 0x0a, 0x0c, 0x63, 0x61, 0x6e, 0x64,
+	0x69, 0x64, 0x61, 0x74, 0x65, 0x50, 0x49, 0x44, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c,
+	0x2e, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x6d, 0x71, 0x2e, 0x50, 0x49, 0x44, 0x52, 0x0c, 0x63, 0x61,
+	0x6e, 0x64, 0x69, 0x64, 0x61, 0x74, 0x65, 0x50, 0x49, 0x44, 0x12, 0x22, 0x0a, 0x0c, 0x6c, 0x61,
+	0x73, 0x74, 0x4c, 0x6f, 0x67, 0x49, 0x6e, 0x64, 0x65, 0x78, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x0c, 0x6c, 0x61, 0x73, 0x74, 0x4c, 0x6f, 0x67, 0x49, 0x6e, 0x64, 0x65, 0x78, 0x12, 0x20,
+	0x0a, 0x0b, 0x6c, 0x61, 0x73, 0x74, 0x4c, 0x6f, 0x67, 0x54, 0x65, 0x72, 0x6d, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x0b, 0x6c, 0x61, 0x73, 0x74, 0x4c, 0x6f, 0x67, 0x54, 0x65, 0x72, 0x6d,
+	0x22, 0x49, 0x0a, 0x11, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x56, 0x6f, 0x74, 0x65, 0x52,
+	0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x20, 0x0a, 0x0b, 0x76, 0x6f, 0x74,
+	0x65, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0b,
+	0x76, 0x6f, 0x74, 0x65, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x65, 0x64, 0x22, 0x23, 0x0a, 0x07, 0x43,
+	0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64,
+	0x22, 0x59, 0x0a, 0x0d, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x52, 0x65, 0x73, 0x75, 0x6c,
+	0x74, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12, 0x2e, 0x0a, 0x0b, 0x72,
+	0x65, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x50, 0x49, 0x44, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x0c, 0x2e, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x6d, 0x71, 0x2e, 0x50, 0x49, 0x44, 0x52, 0x0b,
+	0x72, 0x65, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x50, 0x49, 0x44, 0x42, 0x20, 0x5a, 0x1e, 0x67,
+	0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x74, 0x72, 0x6f, 0x79, 0x67, 0x69,
+	0x6c, 0x6d, 0x61, 0x6e, 0x30, 0x2f, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x6d, 0x71, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -181,19 +640,31 @@ func file_actormq_proto_rawDescGZIP() []byte {
 	return file_actormq_proto_rawDescData
 }
 
-var file_actormq_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_actormq_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_actormq_proto_goTypes = []any{
-	(*PID)(nil),          // 0: actormq.PID
-	(*RegisterNode)(nil), // 1: actormq.RegisterNode
-	(*ActiveNodes)(nil),  // 2: actormq.ActiveNodes
+	(*PID)(nil),                 // 0: actormq.PID
+	(*RegisterNode)(nil),        // 1: actormq.RegisterNode
+	(*ActiveNodes)(nil),         // 2: actormq.ActiveNodes
+	(*LogEntry)(nil),            // 3: actormq.LogEntry
+	(*AppendEntries)(nil),       // 4: actormq.AppendEntries
+	(*AppendEntriesResult)(nil), // 5: actormq.AppendEntriesResult
+	(*RequestVote)(nil),         // 6: actormq.RequestVote
+	(*RequestVoteResult)(nil),   // 7: actormq.RequestVoteResult
+	(*Command)(nil),             // 8: actormq.Command
+	(*CommandResult)(nil),       // 9: actormq.CommandResult
 }
 var file_actormq_proto_depIdxs = []int32{
 	0, // 0: actormq.ActiveNodes.nodes:type_name -> actormq.PID
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 1: actormq.AppendEntries.leaderPID:type_name -> actormq.PID
+	3, // 2: actormq.AppendEntries.entries:type_name -> actormq.LogEntry
+	0, // 3: actormq.AppendEntriesResult.PID:type_name -> actormq.PID
+	0, // 4: actormq.RequestVote.candidatePID:type_name -> actormq.PID
+	0, // 5: actormq.CommandResult.redirectPID:type_name -> actormq.PID
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_actormq_proto_init() }
@@ -207,7 +678,7 @@ func file_actormq_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_actormq_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -12,3 +12,44 @@ message RegisterNode {}
 message ActiveNodes {
 	repeated PID nodes = 1;
 }
+
+message LogEntry {
+    string command = 1;
+    uint64 term = 2;
+}
+
+message AppendEntries {
+    uint64 term = 1;
+    PID leaderPID = 2;
+    uint64 prevLogIndex = 3;
+    uint64 prevLogTerm = 4;
+    uint64 leaderCommit = 5;
+    repeated LogEntry entries = 6;
+}
+
+message AppendEntriesResult {
+    PID PID = 1;
+    uint64 term = 2;
+    bool success = 3;
+}
+
+message RequestVote {
+    uint64 term = 1;
+    PID candidatePID = 2;
+    uint64 lastLogIndex = 3;
+    uint64 lastLogTerm = 4;
+}
+
+message RequestVoteResult {
+    uint64 term = 1;
+    bool voteGranted = 2;
+}
+
+message Command {
+    string command = 1;
+}
+
+message CommandResult {
+    bool success = 1;
+    PID redirectPID = 2;
+}

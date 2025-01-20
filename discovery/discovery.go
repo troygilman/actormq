@@ -1,10 +1,11 @@
-package actormq
+package discovery
 
 import (
 	"log"
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
+	"github.com/troygilman0/actormq"
 )
 
 type (
@@ -39,7 +40,7 @@ func (d *discovery) Receive(act *actor.Context) {
 	case actor.Stopped:
 		d.repeater.Stop()
 
-	case *RegisterNode:
+	case *actormq.RegisterNode:
 		pid := act.Sender()
 		d.nodes[pid.String()] = &nodeMetadata{
 			pid:      pid,
@@ -51,7 +52,7 @@ func (d *discovery) Receive(act *actor.Context) {
 	case sendPing:
 		shouldSendActiveNodes := false
 		for key, node := range d.nodes {
-			if time.Since(node.lastPong) > 10*time.Second {
+			if time.Since(node.lastPong) > 3*time.Second {
 				delete(d.nodes, key)
 				shouldSendActiveNodes = true
 			} else {
@@ -74,12 +75,12 @@ func (d *discovery) Receive(act *actor.Context) {
 }
 
 func (d *discovery) sendActiveNodes(act *actor.Context) {
-	nodes := make([]*PID, len(d.nodes))
+	nodes := make([]*actormq.PID, 0)
 	for _, node := range d.nodes {
-		nodes = append(nodes, actorPIDToPID(node.pid))
+		nodes = append(nodes, actormq.ActorPIDToPID(node.pid))
 	}
 	for _, node := range d.nodes {
-		act.Send(node.pid, &ActiveNodes{
+		act.Send(node.pid, &actormq.ActiveNodes{
 			Nodes: nodes,
 		})
 	}
