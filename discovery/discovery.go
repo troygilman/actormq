@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"log"
+	"log/slog"
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
@@ -16,6 +17,10 @@ type (
 	}
 )
 
+type DiscoveryConfig struct {
+	Logger *slog.Logger
+}
+
 type discovery struct {
 	nodes    map[string]*nodeMetadata
 	repeater actor.SendRepeater
@@ -28,8 +33,6 @@ func NewDiscovery() actor.Producer {
 }
 
 func (d *discovery) Receive(act *actor.Context) {
-	log.Printf("%s - %T: %+v\n", act.PID().String(), act.Message(), act.Message())
-
 	switch act.Message().(type) {
 	case actor.Initialized:
 		d.nodes = make(map[string]*nodeMetadata)

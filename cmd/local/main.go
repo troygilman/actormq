@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"log/slog"
 	"time"
@@ -21,10 +22,10 @@ func main() {
 
 	config := raft.NodeConfig{
 		DiscoveryPID: discoveryPID,
-		// Logger:       slog.New(slog.NewJSONHandler(io.Discard, nil)),
-		Logger: slog.Default(),
+		Logger:       slog.New(slog.NewJSONHandler(io.Discard, nil)),
+		// Logger: slog.Default(),
 		Handler: func(command string) {
-			log.Println(command)
+			// log.Println(command)
 		},
 	}
 
@@ -33,6 +34,7 @@ func main() {
 	nodePID := engine.Spawn(raft.NewNode(config), "node")
 
 	for {
+		start := time.Now()
 		result, err := engine.Request(nodePID, &actormq.Command{
 			Command: "Hello World",
 		}, time.Second).Result()
@@ -43,11 +45,11 @@ func main() {
 		if !ok {
 			panic("result is invalid type")
 		}
-		log.Println("RESULT", commandResult)
+		log.Println("RESULT", commandResult, "duration:", time.Since(start))
 		if commandResult.RedirectPID != nil {
 			nodePID = actormq.PIDToActorPID(commandResult.RedirectPID)
 		}
-		time.Sleep(time.Second)
+		time.Sleep(time.Millisecond)
 	}
 
 }

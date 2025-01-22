@@ -167,7 +167,7 @@ func (node *nodeActor) handleAppendEntries(act *actor.Context, msg *actormq.Appe
 		return
 	}
 
-	node.leader = actormq.PIDToActorPID(msg.LeaderPID)
+	node.leader = act.Sender()
 
 	// Condition #2
 	// Reply false if log doesn't contain an entry at prevLogIndex whose term matches prevLogTerm
@@ -220,7 +220,7 @@ func (node *nodeActor) handleAppendEntriesResult(act *actor.Context, msg *actorm
 	}
 	if msg.Success {
 		lastLogIndex, _ := node.lastLogIndexAndTerm()
-		metadata.matchIndex = metadata.nextIndex - 1
+		metadata.matchIndex = metadata.nextIndex
 		metadata.nextIndex = lastLogIndex + 1
 	} else {
 		if metadata.nextIndex > 1 {
@@ -308,7 +308,6 @@ func (node *nodeActor) sendAppendEntries(act *actor.Context, pid *actor.PID) err
 
 	act.Send(metadata.pid, &actormq.AppendEntries{
 		Term:         node.currentTerm,
-		LeaderPID:    actormq.ActorPIDToPID(act.PID()),
 		PrevLogTerm:  prevLogTerm,
 		PrevLogIndex: prevLogIndex,
 		Entries:      entries,

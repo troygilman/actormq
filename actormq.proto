@@ -20,22 +20,21 @@ message LogEntry {
 
 message AppendEntries {
     uint64 term = 1;
-    PID leaderPID = 2;
-    uint64 prevLogIndex = 3;
-    uint64 prevLogTerm = 4;
-    uint64 leaderCommit = 5;
-    repeated LogEntry entries = 6;
+    uint64 prevLogIndex = 2;
+    uint64 prevLogTerm = 3;
+    uint64 leaderCommit = 4;
+    repeated LogEntry entries = 5;
 }
 
 message AppendEntriesResult {
-    uint64 term = 2;
-    bool success = 3;
+    uint64 term = 1;
+    bool success = 2;
 }
 
 message RequestVote {
     uint64 term = 1;
-    uint64 lastLogIndex = 3;
-    uint64 lastLogTerm = 4;
+    uint64 lastLogIndex = 2;
+    uint64 lastLogTerm = 3;
 }
 
 message RequestVoteResult {
