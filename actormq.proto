@@ -28,14 +28,12 @@ message AppendEntries {
 }
 
 message AppendEntriesResult {
-    PID PID = 1;
     uint64 term = 2;
     bool success = 3;
 }
 
 message RequestVote {
     uint64 term = 1;
-    PID candidatePID = 2;
     uint64 lastLogIndex = 3;
     uint64 lastLogTerm = 4;
 }

@@ -129,6 +129,7 @@ func (node *nodeActor) handleActiveNodes(act *actor.Context, msg *actormq.Active
 }
 
 func (node *nodeActor) handleCommand(act *actor.Context, msg *actormq.Command) {
+	node.config.Logger.Info("handleCommand", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
 	if pidEquals(node.leader, act.PID()) {
 		node.log = append(node.log, &actormq.LogEntry{
 			Command: msg.Command,
@@ -150,10 +151,9 @@ func (node *nodeActor) handleCommand(act *actor.Context, msg *actormq.Command) {
 func (node *nodeActor) handleAppendEntries(act *actor.Context, msg *actormq.AppendEntries) {
 	result := &actormq.AppendEntriesResult{}
 	defer func() {
-		result.PID = actormq.ActorPIDToPID(act.PID())
 		result.Term = node.currentTerm
 		act.Send(act.Sender(), result)
-		node.config.Logger.Info("handleAppendEntries", "msg", msg, "result", result)
+		node.config.Logger.Info("handleAppendEntries", "pid", act.PID(), "sender", act.Sender(), "msg", msg, "result", result)
 	}()
 
 	if msg.Term == node.currentTerm && pidEquals(node.leader, act.PID()) {
@@ -212,9 +212,10 @@ func (node *nodeActor) handleAppendEntries(act *actor.Context, msg *actormq.Appe
 }
 
 func (node *nodeActor) handleAppendEntriesResult(act *actor.Context, msg *actormq.AppendEntriesResult) {
-	node.config.Logger.Info("handleAppendEntriesResult", "msg", msg)
-	metadata, ok := node.nodes[msg.PID.String()]
+	node.config.Logger.Info("handleAppendEntriesResult", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
+	metadata, ok := node.nodes[act.Sender().String()]
 	if !ok {
+		node.config.Logger.Error("handleAppendEntriesResult", "pid", act.PID(), "sender", act.Sender(), "msg", msg, "error", errors.New("could not find PID"))
 		return
 	}
 	if msg.Success {
@@ -226,7 +227,7 @@ func (node *nodeActor) handleAppendEntriesResult(act *actor.Context, msg *actorm
 			metadata.nextIndex--
 		}
 		if err := node.sendAppendEntries(act, metadata.pid); err != nil {
-			node.config.Logger.Info("handleAppendEntriesResult", "result", msg, "error", err)
+			node.config.Logger.Error("handleAppendEntriesResult", "pid", act.PID(), "sender", act.Sender(), "msg", msg, "error", err)
 		}
 	}
 }
@@ -236,7 +237,7 @@ func (node *nodeActor) handleRequestVote(act *actor.Context, msg *actormq.Reques
 	defer func() {
 		result.Term = node.currentTerm
 		act.Send(act.Sender(), result)
-		node.config.Logger.Info("handleRequestVote", "msg", msg, "result", result)
+		node.config.Logger.Info("handleRequestVote", "pid", act.PID(), "sender", act.Sender(), "msg", msg, "result", result)
 	}()
 
 	// Condition #1
@@ -249,7 +250,7 @@ func (node *nodeActor) handleRequestVote(act *actor.Context, msg *actormq.Reques
 	// Condition #2
 	// If votedFor is null or candidateId,
 	// and candidate's log is at least as up-to-date as receiver's log, grant vote
-	candidatePID := actormq.PIDToActorPID(msg.CandidatePID)
+	candidatePID := act.Sender()
 	if node.votedFor == nil || node.votedFor.String() == candidatePID.String() {
 		if msg.LastLogIndex >= node.lastApplied && (node.lastApplied == 0 || msg.LastLogTerm >= node.log[node.lastApplied-1].Term) {
 			node.votedFor = candidatePID
@@ -263,7 +264,7 @@ func (node *nodeActor) handleRequestVoteResult(act *actor.Context, msg *actormq.
 	if msg.VoteGranted && msg.Term == node.currentTerm && !pidEquals(node.leader, act.PID()) {
 		node.votes++
 		if float32(node.votes)/float32(len(node.nodes)) > 0.5 {
-			node.config.Logger.Info("Promoted to leader")
+			node.config.Logger.Info("Promoted to leader", "pid", act.PID(), "sender", act.Sender())
 			node.leader = act.PID()
 			lastLogIndex, _ := node.lastLogIndexAndTerm()
 			for _, metadata := range node.nodes {
@@ -278,7 +279,7 @@ func (node *nodeActor) handleRequestVoteResult(act *actor.Context, msg *actormq.
 func (node *nodeActor) sendAppendEntriesAll(act *actor.Context) {
 	for _, metadata := range node.nodes {
 		if err := node.sendAppendEntries(act, metadata.pid); err != nil {
-			node.config.Logger.Error("Sending AppendEntries for "+metadata.pid.String(), "error", err.Error())
+			node.config.Logger.Error("Sending AppendEntries for "+metadata.pid.String(), "pid", act.PID(), "error", err.Error())
 		}
 	}
 }
@@ -318,14 +319,14 @@ func (node *nodeActor) sendAppendEntries(act *actor.Context, pid *actor.PID) err
 
 func (node *nodeActor) startElection(act *actor.Context) {
 	defer func() {
-		node.config.Logger.Info("Starting election", "term", node.currentTerm)
+		node.config.Logger.Info("Starting election", "pid", act.PID(), "term", node.currentTerm)
 	}()
 	node.currentTerm++
 	node.votes = 1
 	node.votedFor = act.PID()
 
 	if len(node.nodes)+1 < minServersForElection {
-		node.config.Logger.Info("Not enough servers for election")
+		node.config.Logger.Warn("Not enough servers for election", "pid", act.PID())
 		return
 	}
 
@@ -333,7 +334,6 @@ func (node *nodeActor) startElection(act *actor.Context) {
 	for _, metadata := range node.nodes {
 		act.Send(metadata.pid, &actormq.RequestVote{
 			Term:         node.currentTerm,
-			CandidatePID: actormq.ActorPIDToPID(act.PID()),
 			LastLogIndex: lastLogIndex,
 			LastLogTerm:  lastLogTerm,
 		})
@@ -387,6 +387,6 @@ func (node *nodeActor) updateStateMachine(act *actor.Context) {
 			})
 			delete(node.pendingCommands, node.lastApplied)
 		}
-		node.config.Logger.Info("Applied command", "index", node.lastApplied, "command", entry.Command)
+		node.config.Logger.Info("Applied command", "pid", act.PID(), "index", node.lastApplied, "command", entry.Command)
 	}
 }
