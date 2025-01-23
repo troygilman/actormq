@@ -29,7 +29,7 @@ func main() {
 	engine.Spawn(raft.NewNode(config), "node")
 	nodePID := engine.Spawn(raft.NewNode(config), "node")
 
-	select {}
+	// select {}
 	for {
 		start := time.Now()
 		result, err := engine.Request(nodePID, &actormq.Command{

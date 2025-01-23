@@ -7,14 +7,13 @@ import (
 
 	"github.com/anthdm/hollywood/actor"
 	"github.com/troygilman0/actormq"
-)
-
-const (
-	checkTimersInterval = 10 * time.Millisecond
+	"github.com/troygilman0/actormq/raft/timer"
 )
 
 type (
-	checkTimers = struct{}
+	checkTimers      struct{}
+	heartbeatTimeout struct{}
+	electionTimeout  struct{}
 )
 
 type NodeConfig struct {
@@ -62,9 +61,8 @@ type nodeActor struct {
 	votes           uint64
 	nodes           map[string]*nodeMetadata
 	pendingCommands map[uint64]*commandMetadata
-	electionTimer   *time.Timer
-	heartbeatTimer  *time.Timer
-	status          nodeStatus
+	electionTimer   *timer.SendTimer
+	heartbeatTimer  *timer.SendTimer
 }
 
 func NewNode(config NodeConfig) actor.Producer {
@@ -76,13 +74,12 @@ func NewNode(config NodeConfig) actor.Producer {
 }
 
 func (node *nodeActor) Receive(act *actor.Context) {
-	// log.Printf("%s - %T: %v\n", act.PID().String(), act.Message(), act.Message())
 	switch msg := act.Message().(type) {
 	case actor.Initialized:
 		node.nodes = make(map[string]*nodeMetadata)
 		node.pendingCommands = make(map[uint64]*commandMetadata)
-		node.electionTimer = time.NewTimer(newElectionTimoutDuration(node.config))
-		node.heartbeatTimer = time.NewTimer(node.config.HeartbeatInterval)
+		node.electionTimer = timer.NewSendTimer(act.Engine(), act.PID(), electionTimeout{}, newElectionTimoutDuration(node.config))
+		node.heartbeatTimer = timer.NewSendTimer(act.Engine(), act.PID(), heartbeatTimeout{}, node.config.HeartbeatInterval)
 
 	case actor.Started:
 		act.Send(node.config.DiscoveryPID, &actormq.RegisterNode{})
@@ -113,23 +110,19 @@ func (node *nodeActor) Receive(act *actor.Context) {
 		node.handleExternalTerm(msg.Term)
 		node.handleRequestVoteResult(act, msg)
 
-	case checkTimers:
-		select {
-		case <-node.heartbeatTimer.C:
-			node.heartbeatTimer.Reset(node.config.HeartbeatInterval)
-			if pidEquals(node.leader, act.PID()) {
-				node.sendAppendEntriesAll(act)
-			}
-		case <-node.electionTimer.C:
-			node.electionTimer.Reset(newElectionTimoutDuration(node.config))
-			if !pidEquals(act.PID(), node.leader) {
-				node.startElection(act)
-			}
-		default:
+	case electionTimeout:
+		node.electionTimer.Reset(newElectionTimoutDuration(node.config))
+		if !pidEquals(act.PID(), node.leader) {
+			node.startElection(act)
 		}
-		sendWithDelay(act, act.PID(), checkTimers{}, checkTimersInterval)
 
+	case heartbeatTimeout:
+		node.heartbeatTimer.Reset(node.config.HeartbeatInterval)
+		if pidEquals(node.leader, act.PID()) {
+			node.sendAppendEntriesAll(act)
+		}
 	}
+
 	node.updateStateMachine(act)
 }
 
@@ -228,9 +221,6 @@ func (node *nodeActor) handleAppendEntries(act *actor.Context, msg *actormq.Appe
 
 	result.Success = true
 
-	if !node.electionTimer.Stop() {
-		<-node.electionTimer.C
-	}
 	node.electionTimer.Reset(newElectionTimoutDuration(node.config))
 }
 
