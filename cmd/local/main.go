@@ -20,19 +20,16 @@ func main() {
 
 	discoveryPID := engine.Spawn(discovery.NewDiscovery(), "discovery")
 
-	config := raft.NodeConfig{
-		DiscoveryPID: discoveryPID,
-		Logger:       slog.New(slog.NewJSONHandler(io.Discard, nil)),
-		// Logger: slog.Default(),
-		Handler: func(command string) {
-			// log.Println(command)
-		},
-	}
+	config := raft.NewNodeConfig().
+		WithDiscoveryPID(discoveryPID).
+		WithLogger(slog.New(slog.NewJSONHandler(io.Discard, nil))).
+		WithCommandHandler(func(command string) {})
 
 	engine.Spawn(raft.NewNode(config), "node")
 	engine.Spawn(raft.NewNode(config), "node")
 	nodePID := engine.Spawn(raft.NewNode(config), "node")
 
+	select {}
 	for {
 		start := time.Now()
 		result, err := engine.Request(nodePID, &actormq.Command{

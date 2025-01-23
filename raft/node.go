@@ -10,12 +10,7 @@ import (
 )
 
 const (
-	minServersForElection    = 3
-	minElectionTimeoutMs     = 150
-	maxElectionTimeoutMs     = 300
-	heartbeatTimeoutMs       = 50
-	heartbeatTimeoutDuration = heartbeatTimeoutMs * time.Millisecond
-	checkTimersInterval      = 10 * time.Millisecond
+	checkTimersInterval = 10 * time.Millisecond
 )
 
 type (
@@ -23,9 +18,37 @@ type (
 )
 
 type NodeConfig struct {
-	DiscoveryPID *actor.PID
-	Handler      CommandHandler
-	Logger       *slog.Logger
+	DiscoveryPID        *actor.PID
+	Handler             CommandHandler
+	Logger              *slog.Logger
+	ElectionMinServers  uint64
+	ElectionMinInterval time.Duration
+	ElectionMaxInterval time.Duration
+	HeartbeatInterval   time.Duration
+}
+
+func NewNodeConfig() NodeConfig {
+	return NodeConfig{
+		ElectionMinServers:  3,
+		ElectionMinInterval: 150 * time.Millisecond,
+		ElectionMaxInterval: 300 * time.Millisecond,
+		HeartbeatInterval:   50 * time.Millisecond,
+	}
+}
+
+func (config NodeConfig) WithDiscoveryPID(discoveryPID *actor.PID) NodeConfig {
+	config.DiscoveryPID = discoveryPID
+	return config
+}
+
+func (config NodeConfig) WithCommandHandler(commandHandler CommandHandler) NodeConfig {
+	config.Handler = commandHandler
+	return config
+}
+
+func (config NodeConfig) WithLogger(logger *slog.Logger) NodeConfig {
+	config.Logger = logger
+	return config
 }
 
 type nodeActor struct {
@@ -58,8 +81,8 @@ func (node *nodeActor) Receive(act *actor.Context) {
 	case actor.Initialized:
 		node.nodes = make(map[string]*nodeMetadata)
 		node.pendingCommands = make(map[uint64]*commandMetadata)
-		node.electionTimer = time.NewTimer(newElectionTimoutDuration())
-		node.heartbeatTimer = time.NewTimer(heartbeatTimeoutDuration)
+		node.electionTimer = time.NewTimer(newElectionTimoutDuration(node.config))
+		node.heartbeatTimer = time.NewTimer(node.config.HeartbeatInterval)
 
 	case actor.Started:
 		act.Send(node.config.DiscoveryPID, &actormq.RegisterNode{})
@@ -93,12 +116,12 @@ func (node *nodeActor) Receive(act *actor.Context) {
 	case checkTimers:
 		select {
 		case <-node.heartbeatTimer.C:
-			node.heartbeatTimer.Reset(heartbeatTimeoutDuration)
+			node.heartbeatTimer.Reset(node.config.HeartbeatInterval)
 			if pidEquals(node.leader, act.PID()) {
 				node.sendAppendEntriesAll(act)
 			}
 		case <-node.electionTimer.C:
-			node.electionTimer.Reset(newElectionTimoutDuration())
+			node.electionTimer.Reset(newElectionTimoutDuration(node.config))
 			if !pidEquals(act.PID(), node.leader) {
 				node.startElection(act)
 			}
@@ -208,7 +231,7 @@ func (node *nodeActor) handleAppendEntries(act *actor.Context, msg *actormq.Appe
 	if !node.electionTimer.Stop() {
 		<-node.electionTimer.C
 	}
-	node.electionTimer.Reset(newElectionTimoutDuration())
+	node.electionTimer.Reset(newElectionTimoutDuration(node.config))
 }
 
 func (node *nodeActor) handleAppendEntriesResult(act *actor.Context, msg *actormq.AppendEntriesResult) {
@@ -324,7 +347,7 @@ func (node *nodeActor) startElection(act *actor.Context) {
 	node.votes = 1
 	node.votedFor = act.PID()
 
-	if len(node.nodes)+1 < minServersForElection {
+	if len(node.nodes)+1 < int(node.config.ElectionMinServers) {
 		node.config.Logger.Warn("Not enough servers for election", "pid", act.PID())
 		return
 	}

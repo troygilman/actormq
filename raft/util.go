@@ -7,8 +7,8 @@ import (
 	"github.com/anthdm/hollywood/actor"
 )
 
-func newElectionTimoutDuration() time.Duration {
-	return time.Duration(minElectionTimeoutMs+rand.Intn(maxElectionTimeoutMs-minElectionTimeoutMs)) * time.Millisecond
+func newElectionTimoutDuration(config NodeConfig) time.Duration {
+	return config.ElectionMinInterval + time.Duration(rand.Intn(int(config.ElectionMaxInterval)-int(config.ElectionMinInterval)))
 }
 
 func sendWithDelay(act *actor.Context, pid *actor.PID, msg any, delay time.Duration) {
