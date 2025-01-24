@@ -1,0 +1,43 @@
+syntax = "proto3";
+package raft;
+option go_package = "github.com/troygilman0/actormq/raft";
+
+import "actormq.proto";
+
+message LogEntry {
+    string command = 1;
+    uint64 term = 2;
+}
+
+message AppendEntries {
+    uint64 term = 1;
+    uint64 prevLogIndex = 2;
+    uint64 prevLogTerm = 3;
+    uint64 leaderCommit = 4;
+    repeated LogEntry entries = 5;
+}
+
+message AppendEntriesResult {
+    uint64 term = 1;
+    bool success = 2;
+}
+
+message RequestVote {
+    uint64 term = 1;
+    uint64 lastLogIndex = 2;
+    uint64 lastLogTerm = 3;
+}
+
+message RequestVoteResult {
+    uint64 term = 1;
+    bool voteGranted = 2;
+}
+
+message Command {
+    string command = 1;
+}
+
+message CommandResult {
+    bool success = 1;
+    actormq.PID redirectPID = 2;
+}

@@ -32,13 +32,13 @@ func main() {
 	// select {}
 	for {
 		start := time.Now()
-		result, err := engine.Request(nodePID, &actormq.Command{
+		result, err := engine.Request(nodePID, &raft.Command{
 			Command: "Hello World",
 		}, time.Second).Result()
 		if err != nil {
 			panic(err)
 		}
-		commandResult, ok := result.(*actormq.CommandResult)
+		commandResult, ok := result.(*raft.CommandResult)
 		if !ok {
 			panic("result is invalid type")
 		}
