@@ -18,16 +18,21 @@ func main() {
 
 	discoveryPID := engine.Spawn(cluster.NewDiscovery(), "discovery")
 
-	config := cluster.NewRaftNodeConfig().
-		WithDiscoveryPID(discoveryPID).
-		WithLogger(slog.New(slog.NewJSONHandler(io.Discard, nil))).
-		// WithLogger(slog.Default()).
-		WithMessageHandler(nil)
+	// config := cluster.NewRaftNodeConfig().
+	// 	WithDiscoveryPID(discoveryPID).
+	// 	WithLogger(slog.New(slog.NewJSONHandler(io.Discard, nil))).
+	// 	// WithLogger(slog.Default()).
+	// 	WithMessageHandler(nil)
+
+	config := cluster.NodeConfig{
+		Discovery: discoveryPID,
+		Logger:    slog.New(slog.NewJSONHandler(io.Discard, nil)),
+	}
 
 	nodes := []*actor.PID{
-		engine.Spawn(cluster.NewRaftNode(config), "node"),
-		engine.Spawn(cluster.NewRaftNode(config), "node"),
-		engine.Spawn(cluster.NewRaftNode(config), "node"),
+		engine.Spawn(cluster.NewNode(config), "node"),
+		engine.Spawn(cluster.NewNode(config), "node"),
+		engine.Spawn(cluster.NewNode(config), "node"),
 	}
 
 	engine.Spawn(client.NewClient(client.ClientConfig{

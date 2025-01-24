@@ -10,7 +10,6 @@ import (
 )
 
 type (
-	checkTimers      struct{}
 	heartbeatTimeout struct{}
 	electionTimeout  struct{}
 )
@@ -82,7 +81,6 @@ func (node *raftNodeActor) Receive(act *actor.Context) {
 
 	case actor.Started:
 		act.Send(node.config.DiscoveryPID, &RegisterNode{})
-		act.Send(act.PID(), checkTimers{})
 
 	case *ActiveNodes:
 		node.handleActiveNodes(act, msg)
