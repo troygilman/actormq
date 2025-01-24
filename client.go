@@ -5,14 +5,13 @@ import (
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
-	"github.com/troygilman0/actormq/raft/timer"
 )
 
-type heartbeatTimeout struct {
-}
+type heartbeatTimeout struct{}
 
 type nodeMetadata struct {
-	pid *actor.PID
+	pid           *actor.PID
+	lastHeartbeat time.Time
 }
 
 type ClientConfig struct {
@@ -20,10 +19,10 @@ type ClientConfig struct {
 }
 
 type clientActor struct {
-	config         ClientConfig
-	nodes          map[string]*nodeMetadata
-	leader         *actor.PID
-	heartbeatTimer *timer.SendTimer
+	config            ClientConfig
+	nodes             map[string]*nodeMetadata
+	leader            *actor.PID
+	heartbeatRepeater actor.SendRepeater
 }
 
 func NewClient(config ClientConfig) actor.Producer {
@@ -36,27 +35,33 @@ func NewClient(config ClientConfig) actor.Producer {
 
 func (client *clientActor) Receive(act *actor.Context) {
 	log.Printf("%s - %T: %+v\n", act.PID().String(), act.Message(), act.Message())
-	switch act.Message().(type) {
+	switch msg := act.Message().(type) {
 	case actor.Initialized:
 		client.nodes = make(map[string]*nodeMetadata)
 		for _, pid := range client.config.Nodes {
 			client.nodes[pid.String()] = &nodeMetadata{
-				pid: pid,
+				pid:           pid,
+				lastHeartbeat: time.Now(),
 			}
 		}
 
 	case actor.Started:
-		client.heartbeatTimer = timer.NewSendTimer(act.Engine(), act.PID(), heartbeatTimeout{}, time.Second)
+		client.heartbeatRepeater = act.SendRepeat(act.PID(), heartbeatTimeout{}, time.Second)
 		client.sendHeartbeat(act)
 
 	case actor.Stopped:
-		client.heartbeatTimer.Stop()
+		client.heartbeatRepeater.Stop()
 
 	case heartbeatTimeout:
 		client.sendHeartbeat(act)
-		client.heartbeatTimer.Reset(time.Second)
 
 	case *actor.Pong:
+		if node, ok := client.nodes[act.Sender().String()]; ok {
+			node.lastHeartbeat = time.Now()
+		}
+
+	case CreateConsumer:
+		_ = msg
 
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
-	"github.com/troygilman0/actormq"
 	"github.com/troygilman0/actormq/raft/timer"
 )
 
@@ -18,7 +17,7 @@ type (
 
 type NodeConfig struct {
 	DiscoveryPID        *actor.PID
-	Handler             CommandHandler
+	MessageHandler      MessageHandler
 	Logger              *slog.Logger
 	ElectionMinServers  uint64
 	ElectionMinInterval time.Duration
@@ -40,8 +39,8 @@ func (config NodeConfig) WithDiscoveryPID(discoveryPID *actor.PID) NodeConfig {
 	return config
 }
 
-func (config NodeConfig) WithCommandHandler(commandHandler CommandHandler) NodeConfig {
-	config.Handler = commandHandler
+func (config NodeConfig) WithMessageHandler(messageHandler MessageHandler) NodeConfig {
+	config.MessageHandler = messageHandler
 	return config
 }
 
@@ -82,17 +81,17 @@ func (node *nodeActor) Receive(act *actor.Context) {
 		node.heartbeatTimer = timer.NewSendTimer(act.Engine(), act.PID(), heartbeatTimeout{}, node.config.HeartbeatInterval)
 
 	case actor.Started:
-		act.Send(node.config.DiscoveryPID, &actormq.RegisterNode{})
+		act.Send(node.config.DiscoveryPID, &RegisterNode{})
 		act.Send(act.PID(), checkTimers{})
 
-	case *actormq.ActiveNodes:
+	case *ActiveNodes:
 		node.handleActiveNodes(act, msg)
 
 	case *actor.Ping:
 		act.Send(act.Sender(), &actor.Pong{})
 
-	case *Command:
-		node.handleCommand(act, msg)
+	case *Message:
+		node.handleMessage(act, msg)
 
 	case *AppendEntries:
 		node.handleExternalTerm(msg.Term)
@@ -126,11 +125,11 @@ func (node *nodeActor) Receive(act *actor.Context) {
 	node.updateStateMachine(act)
 }
 
-func (node *nodeActor) handleActiveNodes(act *actor.Context, msg *actormq.ActiveNodes) {
+func (node *nodeActor) handleActiveNodes(act *actor.Context, msg *ActiveNodes) {
 	node.nodes = make(map[string]*nodeMetadata)
 	lastLogIndex, _ := node.lastLogIndexAndTerm()
 	for _, pid := range msg.Nodes {
-		pid := actormq.PIDToActorPID(pid)
+		pid := PIDToActorPID(pid)
 		if !pidEquals(pid, act.PID()) {
 			if _, ok := node.nodes[pid.String()]; !ok {
 				node.nodes[pid.String()] = &nodeMetadata{
@@ -144,11 +143,11 @@ func (node *nodeActor) handleActiveNodes(act *actor.Context, msg *actormq.Active
 	node.config.Logger.Info("handleActiveNodes", "msg", msg, "nodes", node.nodes)
 }
 
-func (node *nodeActor) handleCommand(act *actor.Context, msg *Command) {
-	node.config.Logger.Info("handleCommand", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
+func (node *nodeActor) handleMessage(act *actor.Context, msg *Message) {
+	node.config.Logger.Info("handleMessage", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
 	if pidEquals(node.leader, act.PID()) {
 		node.log = append(node.log, &LogEntry{
-			Command: msg.Command,
+			Message: msg,
 			Term:    node.currentTerm,
 		})
 		newLogIndex := uint64(len(node.log))
@@ -157,9 +156,9 @@ func (node *nodeActor) handleCommand(act *actor.Context, msg *Command) {
 		}
 		node.sendAppendEntriesAll(act)
 	} else {
-		act.Send(act.Sender(), &CommandResult{
+		act.Send(act.Sender(), &MessageResult{
 			Success:     false,
-			RedirectPID: actormq.ActorPIDToPID(node.leader),
+			RedirectPID: ActorPIDToPID(node.leader),
 		})
 	}
 }
@@ -389,16 +388,16 @@ func (node *nodeActor) updateStateMachine(act *actor.Context) {
 	for node.commitIndex > node.lastApplied {
 		node.lastApplied++
 		entry := node.log[node.lastApplied-1]
-		if node.config.Handler != nil {
-			node.config.Handler(entry.Command)
+		if node.config.MessageHandler != nil {
+			node.config.MessageHandler(entry.GetMessage())
 		}
 		command, ok := node.pendingCommands[node.lastApplied]
 		if ok {
-			act.Send(command.sender, &CommandResult{
+			act.Send(command.sender, &MessageResult{
 				Success: true,
 			})
 			delete(node.pendingCommands, node.lastApplied)
 		}
-		node.config.Logger.Info("Applied command", "pid", act.PID(), "index", node.lastApplied, "command", entry.Command)
+		node.config.Logger.Info("Applied message", "pid", act.PID(), "index", node.lastApplied, "msg", entry.Message)
 	}
 }

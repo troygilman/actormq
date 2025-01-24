@@ -4,7 +4,7 @@ import (
 	"github.com/anthdm/hollywood/actor"
 )
 
-type CommandHandler func(command string)
+type MessageHandler func(mg *Message)
 
 type nodeMetadata struct {
 	pid        *actor.PID

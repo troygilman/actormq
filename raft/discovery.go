@@ -1,4 +1,4 @@
-package discovery
+package raft
 
 import (
 	"log"
@@ -6,12 +6,11 @@ import (
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
-	"github.com/troygilman0/actormq"
 )
 
 type (
-	sendPing     struct{}
-	nodeMetadata struct {
+	sendPing              struct{}
+	discoveryNodeMetadata struct {
 		pid      *actor.PID
 		lastPong time.Time
 	}
@@ -22,7 +21,7 @@ type DiscoveryConfig struct {
 }
 
 type discovery struct {
-	nodes    map[string]*nodeMetadata
+	nodes    map[string]*discoveryNodeMetadata
 	repeater actor.SendRepeater
 }
 
@@ -35,7 +34,7 @@ func NewDiscovery() actor.Producer {
 func (d *discovery) Receive(act *actor.Context) {
 	switch act.Message().(type) {
 	case actor.Initialized:
-		d.nodes = make(map[string]*nodeMetadata)
+		d.nodes = make(map[string]*discoveryNodeMetadata)
 
 	case actor.Started:
 		d.repeater = act.SendRepeat(act.PID(), sendPing{}, time.Second)
@@ -43,9 +42,9 @@ func (d *discovery) Receive(act *actor.Context) {
 	case actor.Stopped:
 		d.repeater.Stop()
 
-	case *actormq.RegisterNode:
+	case *RegisterNode:
 		pid := act.Sender()
-		d.nodes[pid.String()] = &nodeMetadata{
+		d.nodes[pid.String()] = &discoveryNodeMetadata{
 			pid:      pid,
 			lastPong: time.Now(),
 		}
@@ -78,12 +77,12 @@ func (d *discovery) Receive(act *actor.Context) {
 }
 
 func (d *discovery) sendActiveNodes(act *actor.Context) {
-	nodes := make([]*actormq.PID, 0)
+	nodes := make([]*PID, 0)
 	for _, node := range d.nodes {
-		nodes = append(nodes, actormq.ActorPIDToPID(node.pid))
+		nodes = append(nodes, ActorPIDToPID(node.pid))
 	}
 	for _, node := range d.nodes {
-		act.Send(node.pid, &actormq.ActiveNodes{
+		act.Send(node.pid, &ActiveNodes{
 			Nodes: nodes,
 		})
 	}

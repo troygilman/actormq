@@ -2,10 +2,18 @@ syntax = "proto3";
 package raft;
 option go_package = "github.com/troygilman0/actormq/raft";
 
-import "actormq.proto";
+message Message {
+	bytes data = 1;
+	int32 typeNameIndex = 2;
+}
+
+message MessageResult {
+    bool success = 1;
+    PID redirectPID = 2;
+}
 
 message LogEntry {
-    string command = 1;
+    Message message = 1;
     uint64 term = 2;
 }
 
@@ -33,11 +41,13 @@ message RequestVoteResult {
     bool voteGranted = 2;
 }
 
-message Command {
-    string command = 1;
+message PID {
+    string address = 1;
+	string ID = 2;
 }
 
-message CommandResult {
-    bool success = 1;
-    actormq.PID redirectPID = 2;
+message RegisterNode {}
+
+message ActiveNodes {
+	repeated PID nodes = 1;
 }

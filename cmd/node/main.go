@@ -25,13 +25,8 @@ func main() {
 
 	engine.Spawn(raft.NewNode(raft.NodeConfig{
 		DiscoveryPID: actor.NewPID(discoveryAddr, discoveryID),
-		Handler:      handle,
 		Logger:       slog.Default(),
 	}), "node")
 
 	select {}
-}
-
-func handle(command string) {
-
 }
