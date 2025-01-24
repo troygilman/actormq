@@ -1,4 +1,4 @@
-package raft
+package cluster
 
 import (
 	"github.com/anthdm/hollywood/actor"

@@ -1,6 +1,6 @@
 syntax = "proto3";
-package raft;
-option go_package = "github.com/troygilman0/actormq/raft";
+package cluster;
+option go_package = "github.com/troygilman0/actormq/cluster";
 
 message Message {
 	bytes data = 1;

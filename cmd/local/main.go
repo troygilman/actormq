@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
-	"github.com/troygilman0/actormq"
-	"github.com/troygilman0/actormq/raft"
+	"github.com/troygilman0/actormq/client"
+	"github.com/troygilman0/actormq/cluster"
 )
 
 func main() {
@@ -16,38 +16,38 @@ func main() {
 		panic(err)
 	}
 
-	discoveryPID := engine.Spawn(raft.NewDiscovery(), "discovery")
+	discoveryPID := engine.Spawn(cluster.NewDiscovery(), "discovery")
 
-	config := raft.NewNodeConfig().
+	config := cluster.NewRaftNodeConfig().
 		WithDiscoveryPID(discoveryPID).
 		WithLogger(slog.New(slog.NewJSONHandler(io.Discard, nil))).
 		// WithLogger(slog.Default()).
 		WithMessageHandler(nil)
 
 	nodes := []*actor.PID{
-		engine.Spawn(raft.NewNode(config), "node"),
-		engine.Spawn(raft.NewNode(config), "node"),
-		engine.Spawn(raft.NewNode(config), "node"),
+		engine.Spawn(cluster.NewRaftNode(config), "node"),
+		engine.Spawn(cluster.NewRaftNode(config), "node"),
+		engine.Spawn(cluster.NewRaftNode(config), "node"),
 	}
 
-	engine.Spawn(actormq.NewClient(actormq.ClientConfig{
+	engine.Spawn(client.NewClient(client.ClientConfig{
 		Nodes: nodes,
 	}), "client")
 
 	nodePID := nodes[0]
 	for {
 		// start := time.Now()
-		result, err := engine.Request(nodePID, &raft.Message{}, time.Second).Result()
+		result, err := engine.Request(nodePID, &cluster.Message{}, time.Second).Result()
 		if err != nil {
 			panic(err)
 		}
-		messageResult, ok := result.(*raft.MessageResult)
+		messageResult, ok := result.(*cluster.MessageResult)
 		if !ok {
 			panic("result is invalid type")
 		}
 		// log.Println("RESULT", messageResult, "duration:", time.Since(start))
 		if messageResult.RedirectPID != nil {
-			nodePID = raft.PIDToActorPID(messageResult.RedirectPID)
+			nodePID = cluster.PIDToActorPID(messageResult.RedirectPID)
 		}
 		time.Sleep(time.Millisecond)
 	}

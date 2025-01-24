@@ -1,8 +1,7 @@
-package actormq
+package cluster
 
 import (
 	"github.com/anthdm/hollywood/actor"
-	"github.com/troygilman0/actormq/raft"
 )
 
 type NodeConfig struct {
@@ -22,6 +21,6 @@ func NewNode(config NodeConfig) actor.Producer {
 func (node *nodeActor) Receive(act *actor.Context) {
 	switch act.Message().(type) {
 	case actor.Started:
-		act.SpawnChild(raft.NewNode(raft.NewNodeConfig()), "raft-node")
+		act.SpawnChild(NewRaftNode(NewRaftNodeConfig()), "raft-node")
 	}
 }

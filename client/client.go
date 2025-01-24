@@ -1,4 +1,4 @@
-package actormq
+package client
 
 import (
 	"log"

@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/anthdm/hollywood/actor"
 	"github.com/anthdm/hollywood/remote"
-	"github.com/troygilman0/actormq/raft"
+	"github.com/troygilman0/actormq/cluster"
 )
 
 const (
@@ -17,7 +17,7 @@ func main() {
 		panic(err)
 	}
 
-	engine.Spawn(raft.NewDiscovery(), "discovery", actor.WithID("primary"))
+	engine.Spawn(cluster.NewDiscovery(), "discovery", actor.WithID("primary"))
 
 	select {}
 }

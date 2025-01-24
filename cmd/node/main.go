@@ -6,7 +6,7 @@ import (
 
 	"github.com/anthdm/hollywood/actor"
 	"github.com/anthdm/hollywood/remote"
-	"github.com/troygilman0/actormq/raft"
+	"github.com/troygilman0/actormq/cluster"
 )
 
 const (
@@ -23,7 +23,7 @@ func main() {
 		panic(err)
 	}
 
-	engine.Spawn(raft.NewNode(raft.NodeConfig{
+	engine.Spawn(cluster.NewRaftNode(cluster.RaftNodeConfig{
 		DiscoveryPID: actor.NewPID(discoveryAddr, discoveryID),
 		Logger:       slog.Default(),
 	}), "node")
