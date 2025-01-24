@@ -2,9 +2,7 @@ package main
 
 import (
 	"io"
-	"log"
 	"log/slog"
-	"time"
 
 	"github.com/anthdm/hollywood/actor"
 	"github.com/troygilman0/actormq"
@@ -23,30 +21,38 @@ func main() {
 	config := raft.NewNodeConfig().
 		WithDiscoveryPID(discoveryPID).
 		WithLogger(slog.New(slog.NewJSONHandler(io.Discard, nil))).
+		// WithLogger(slog.Default()).
 		WithCommandHandler(func(command string) {})
 
-	engine.Spawn(raft.NewNode(config), "node")
-	engine.Spawn(raft.NewNode(config), "node")
-	nodePID := engine.Spawn(raft.NewNode(config), "node")
-
-	// select {}
-	for {
-		start := time.Now()
-		result, err := engine.Request(nodePID, &raft.Command{
-			Command: "Hello World",
-		}, time.Second).Result()
-		if err != nil {
-			panic(err)
-		}
-		commandResult, ok := result.(*raft.CommandResult)
-		if !ok {
-			panic("result is invalid type")
-		}
-		log.Println("RESULT", commandResult, "duration:", time.Since(start))
-		if commandResult.RedirectPID != nil {
-			nodePID = actormq.PIDToActorPID(commandResult.RedirectPID)
-		}
-		time.Sleep(time.Millisecond)
+	nodes := []*actor.PID{
+		engine.Spawn(raft.NewNode(config), "node"),
+		engine.Spawn(raft.NewNode(config), "node"),
+		engine.Spawn(raft.NewNode(config), "node"),
 	}
+
+	engine.Spawn(actormq.NewClient(actormq.ClientConfig{
+		Nodes: nodes,
+	}), "client")
+
+	select {}
+	// nodePID := nodes[0]
+	// for {
+	// 	start := time.Now()
+	// 	result, err := engine.Request(nodePID, &raft.Command{
+	// 		Command: "Hello World",
+	// 	}, time.Second).Result()
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	commandResult, ok := result.(*raft.CommandResult)
+	// 	if !ok {
+	// 		panic("result is invalid type")
+	// 	}
+	// 	log.Println("RESULT", commandResult, "duration:", time.Since(start))
+	// 	if commandResult.RedirectPID != nil {
+	// 		nodePID = actormq.PIDToActorPID(commandResult.RedirectPID)
+	// 	}
+	// 	time.Sleep(time.Millisecond)
+	// }
 
 }

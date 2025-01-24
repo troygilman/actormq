@@ -16,18 +16,23 @@ func NewSendTimer(engine *actor.Engine, pid *actor.PID, msg any, duration time.D
 	stopChan := make(chan struct{})
 	timer := time.NewTimer(duration)
 	go func() {
+		stopped := false
 		for {
 			select {
 			case <-timer.C:
 				engine.Send(pid, msg)
+				stopped = true
 			case duration := <-resetChan:
-				if !timer.Stop() {
+				// log.Println("reset", pid.String(), reflect.TypeOf(msg))
+				if !stopped && !timer.Stop() {
+					// log.Println("reset-1", pid.String(), reflect.TypeOf(msg))
 					<-timer.C
 				}
 				timer.Reset(duration)
+				stopped = false
 			case <-stopChan:
 				timer.Stop()
-				break
+				return
 			}
 		}
 	}()

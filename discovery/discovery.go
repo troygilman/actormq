@@ -55,7 +55,7 @@ func (d *discovery) Receive(act *actor.Context) {
 	case sendPing:
 		shouldSendActiveNodes := false
 		for key, node := range d.nodes {
-			if time.Since(node.lastPong) > 3*time.Second {
+			if time.Since(node.lastPong) > 5*time.Second {
 				delete(d.nodes, key)
 				shouldSendActiveNodes = true
 			} else {
