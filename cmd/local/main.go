@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"log"
 	"log/slog"
 	"time"
 
@@ -24,25 +25,28 @@ func main() {
 	// 	// WithLogger(slog.Default()).
 	// 	WithMessageHandler(nil)
 
-	config := cluster.NodeConfig{
+	config := cluster.TopicConfig{
 		Discovery: discoveryPID,
 		Logger:    slog.New(slog.NewJSONHandler(io.Discard, nil)),
 	}
 
 	nodes := []*actor.PID{
-		engine.Spawn(cluster.NewNode(config), "node"),
-		engine.Spawn(cluster.NewNode(config), "node"),
-		engine.Spawn(cluster.NewNode(config), "node"),
+		engine.Spawn(cluster.NewTopic(config), "topic"),
+		engine.Spawn(cluster.NewTopic(config), "topic"),
+		engine.Spawn(cluster.NewTopic(config), "topic"),
 	}
 
-	engine.Spawn(client.NewClient(client.ClientConfig{
+	clientPID := engine.Spawn(client.NewClient(client.ClientConfig{
 		Nodes: nodes,
 	}), "client")
+	engine.Send(clientPID, client.CreateConsumer{})
 
 	nodePID := nodes[0]
 	for {
-		// start := time.Now()
-		result, err := engine.Request(nodePID, &cluster.Message{}, time.Second).Result()
+		start := time.Now()
+		result, err := engine.Request(nodePID, &cluster.Message{
+			// Data: []byte("dwwdwdw"),
+		}, time.Second).Result()
 		if err != nil {
 			panic(err)
 		}
@@ -50,10 +54,11 @@ func main() {
 		if !ok {
 			panic("result is invalid type")
 		}
-		// log.Println("RESULT", messageResult, "duration:", time.Since(start))
+		log.Println("RESULT", messageResult, "duration:", time.Since(start))
 		if messageResult.RedirectPID != nil {
 			nodePID = cluster.PIDToActorPID(messageResult.RedirectPID)
 		}
+
 		time.Sleep(time.Millisecond)
 	}
 

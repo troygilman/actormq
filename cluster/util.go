@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
@@ -43,4 +44,11 @@ func ActorPIDToPID(pid *actor.PID) *PID {
 		Address: pid.GetAddress(),
 		ID:      pid.GetID(),
 	}
+}
+
+func ParentPID(pid *actor.PID) *actor.PID {
+	id := pid.GetID()
+	id = id[:strings.LastIndex(id, "/")]
+	id = id[:strings.LastIndex(id, "/")]
+	return actor.NewPID(pid.GetAddress(), id)
 }

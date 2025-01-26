@@ -2,6 +2,11 @@ syntax = "proto3";
 package cluster;
 option go_package = "github.com/troygilman0/actormq/cluster";
 
+message MessageProcessedEvent {
+    string topic = 1;
+    Message message = 2;
+}
+
 message Message {
 	bytes data = 1;
 	int32 typeNameIndex = 2;
@@ -50,4 +55,14 @@ message RegisterNode {}
 
 message ActiveNodes {
 	repeated PID nodes = 1;
+}
+
+message RegisterConsumer {
+    string topic = 1;
+    PID PID = 2;
+}
+
+message RegisterConsumerResult {
+    bool success = 1;
+    string error = 2;
 }

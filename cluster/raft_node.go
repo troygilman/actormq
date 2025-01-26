@@ -16,7 +16,6 @@ type (
 
 type RaftNodeConfig struct {
 	DiscoveryPID        *actor.PID
-	MessageHandler      MessageHandler
 	Logger              *slog.Logger
 	ElectionMinServers  uint64
 	ElectionMinInterval time.Duration
@@ -35,11 +34,6 @@ func NewRaftNodeConfig() RaftNodeConfig {
 
 func (config RaftNodeConfig) WithDiscoveryPID(discoveryPID *actor.PID) RaftNodeConfig {
 	config.DiscoveryPID = discoveryPID
-	return config
-}
-
-func (config RaftNodeConfig) WithMessageHandler(messageHandler MessageHandler) RaftNodeConfig {
-	config.MessageHandler = messageHandler
 	return config
 }
 
@@ -154,9 +148,13 @@ func (node *raftNodeActor) handleMessage(act *actor.Context, msg *Message) {
 		}
 		node.sendAppendEntriesAll(act)
 	} else {
+		var redirectPID *PID
+		if node.leader != nil {
+			redirectPID = ActorPIDToPID(ParentPID(node.leader))
+		}
 		act.Send(act.Sender(), &MessageResult{
 			Success:     false,
-			RedirectPID: ActorPIDToPID(node.leader),
+			RedirectPID: redirectPID,
 		})
 	}
 }
@@ -386,9 +384,7 @@ func (node *raftNodeActor) updateStateMachine(act *actor.Context) {
 	for node.commitIndex > node.lastApplied {
 		node.lastApplied++
 		entry := node.log[node.lastApplied-1]
-		if node.config.MessageHandler != nil {
-			node.config.MessageHandler(entry.GetMessage())
-		}
+		node.applyMessage(act, entry.GetMessage())
 		command, ok := node.pendingCommands[node.lastApplied]
 		if ok {
 			act.Send(command.sender, &MessageResult{
@@ -398,4 +394,12 @@ func (node *raftNodeActor) updateStateMachine(act *actor.Context) {
 		}
 		node.config.Logger.Info("Applied message", "pid", act.PID(), "index", node.lastApplied, "msg", entry.Message)
 	}
+}
+
+func (node *raftNodeActor) applyMessage(act *actor.Context, msg *Message) {
+	// log.Println("applying msg")
+	act.Send(act.Parent(), &MessageProcessedEvent{
+		Topic:   "",
+		Message: msg,
+	})
 }
