@@ -27,9 +27,9 @@ func main() {
 	}
 
 	pods := []*actor.PID{
-		engine.Spawn(cluster.NewPod(config), "1"),
-		engine.Spawn(cluster.NewPod(config), "2"),
-		engine.Spawn(cluster.NewPod(config), "3"),
+		engine.Spawn(cluster.NewPod(config), "pod"),
+		engine.Spawn(cluster.NewPod(config), "pod"),
+		engine.Spawn(cluster.NewPod(config), "pod"),
 	}
 
 	clientPID := engine.Spawn(client.NewClient(client.ClientConfig{

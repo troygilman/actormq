@@ -82,8 +82,8 @@ func (node *nodeActor) Receive(act *actor.Context) {
 	case *actor.Ping:
 		act.Send(act.Sender(), &actor.Pong{})
 
-	case *Message:
-		node.handleMessage(act, msg)
+	case *Envelope:
+		node.handleEnvelope(act, msg)
 
 	case *AppendEntries:
 		node.handleExternalTerm(msg.Term)
@@ -135,11 +135,11 @@ func (node *nodeActor) handleActiveNodes(act *actor.Context, msg *ActiveNodes) {
 	node.config.Logger.Info("handleActiveNodes", "msg", msg, "nodes", node.nodes)
 }
 
-func (node *nodeActor) handleMessage(act *actor.Context, msg *Message) {
+func (node *nodeActor) handleEnvelope(act *actor.Context, msg *Envelope) {
 	node.config.Logger.Info("handleMessage", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
 	if pidEquals(node.leader, act.PID()) {
 		node.log = append(node.log, &LogEntry{
-			Message: msg,
+			Message: msg.Message,
 			Term:    node.currentTerm,
 		})
 		newLogIndex := uint64(len(node.log))
@@ -150,7 +150,7 @@ func (node *nodeActor) handleMessage(act *actor.Context, msg *Message) {
 	} else {
 		var redirectPID *PID
 		if node.leader != nil {
-			redirectPID = ActorPIDToPID(ParentPID(node.leader))
+			redirectPID = ActorPIDToPID(node.leader)
 		}
 		act.Send(act.Sender(), &EnvelopeResult{
 			Success:     false,
