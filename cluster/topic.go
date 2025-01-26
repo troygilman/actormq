@@ -47,7 +47,7 @@ func (topic *topicActor) Receive(act *actor.Context) {
 	case *Envelope:
 		act.Engine().SendWithSender(topic.messagesPID, msg, act.Sender())
 
-	case *MessageProcessedEvent:
+	case *ConsumerEnvelope:
 		for _, pid := range topic.consumers {
 			act.Send(pid, msg)
 		}

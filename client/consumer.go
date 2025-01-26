@@ -1,38 +1,56 @@
 package client
 
-import "github.com/anthdm/hollywood/actor"
+import (
+	"log"
+	"time"
 
-type consumerNodeMetadata struct {
-	pid *actor.PID
-}
+	"github.com/anthdm/hollywood/actor"
+	"github.com/anthdm/hollywood/remote"
+	"github.com/troygilman0/actormq/cluster"
+)
 
 type ConsumerConfig struct {
-	nodes []*actor.PID
+	Topic        string
+	Deserializer remote.Deserializer
 }
 
 type consumerActor struct {
 	config ConsumerConfig
-	nodes  map[string]*consumerNodeMetadata
+	pods   []*actor.PID
 	leader *actor.PID
 }
 
-func NewConsumerActor(config ConsumerConfig) actor.Producer {
+func NewConsumer(config ConsumerConfig, pods []*actor.PID) actor.Producer {
 	return func() actor.Receiver {
 		return &consumerActor{
 			config: config,
+			pods:   pods,
+			leader: pods[0],
 		}
 	}
 }
 
 func (consumer *consumerActor) Receive(act *actor.Context) {
-	switch act.Message().(type) {
-	case actor.Initialized:
-		consumer.nodes = make(map[string]*consumerNodeMetadata)
-		for _, pid := range consumer.config.nodes {
-			consumer.nodes[pid.String()] = &consumerNodeMetadata{
-				pid: pid,
-			}
+	switch msg := act.Message().(type) {
+	case actor.Started:
+		result, err := handleResponse[*cluster.RegisterConsumerResult](act.Request(consumer.leader, &cluster.RegisterConsumer{
+			Topic: consumer.config.Topic,
+			PID:   cluster.ActorPIDToPID(act.PID()),
+		}, 10*time.Second))
+		if err != nil {
+			panic(err)
 		}
+		if !result.Success {
+			panic(result.Error)
+		}
+		log.Println("registered consumer")
+
+	case *cluster.ConsumerEnvelope:
+		message, err := consumer.config.Deserializer.Deserialize(msg.Message.Data, msg.Message.TypeName)
+		if err != nil {
+			panic(err)
+		}
+		log.Printf("%T - %+v\n", message, message)
 
 	}
 }

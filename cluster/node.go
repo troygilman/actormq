@@ -397,9 +397,7 @@ func (node *nodeActor) updateStateMachine(act *actor.Context) {
 }
 
 func (node *nodeActor) applyMessage(act *actor.Context, msg *Message) {
-	// log.Println("applying msg")
-	act.Send(act.Parent(), &MessageProcessedEvent{
-		Topic:   "",
+	act.Send(act.Parent(), &ConsumerEnvelope{
 		Message: msg,
 	})
 }

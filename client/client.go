@@ -1,11 +1,9 @@
 package client
 
 import (
-	"log"
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
-	"github.com/troygilman0/actormq/cluster"
 )
 
 type heartbeatTimeout struct{}
@@ -62,25 +60,14 @@ func (client *clientActor) Receive(act *actor.Context) {
 		}
 
 	case CreateConsumer:
-		for _, node := range client.nodes {
-			result, err := handleResponse[*cluster.RegisterConsumerResult](act.Request(node.pid, &cluster.RegisterConsumer{
-				Topic: msg.Topic,
-				PID:   cluster.ActorPIDToPID(act.PID()),
-			}, 10*time.Second))
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			if !result.Success {
-				log.Println(result.Error)
-				return
-			}
-			log.Println("registered consumer")
-			break
-		}
+		act.Respond(CreateConsumerResult{
+			PID: act.SpawnChild(NewConsumer(msg.ConsumerConfig, client.config.Nodes), "consumer"),
+		})
 
-	case *cluster.MessageProcessedEvent:
-		log.Println("consumed msg", msg)
+	case CreateProducer:
+		act.Respond(CreateProducerResult{
+			PID: act.SpawnChild(NewProducer(msg.ProducerConfig, client.config.Nodes), "producer"),
+		})
 
 	}
 }

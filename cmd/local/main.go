@@ -2,11 +2,11 @@ package main
 
 import (
 	"io"
-	"log"
 	"log/slog"
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
+	"github.com/anthdm/hollywood/remote"
 	"github.com/troygilman0/actormq/client"
 	"github.com/troygilman0/actormq/cluster"
 )
@@ -35,32 +35,30 @@ func main() {
 	clientPID := engine.Spawn(client.NewClient(client.ClientConfig{
 		Nodes: pods,
 	}), "client")
+
 	engine.Send(clientPID, client.CreateConsumer{
-		Topic: "test",
+		ConsumerConfig: client.ConsumerConfig{
+			Topic:        "test",
+			Deserializer: remote.ProtoSerializer{},
+		},
 	})
 
-	pid := pods[0]
-	for {
-		start := time.Now()
-		result, err := engine.Request(pid, &cluster.Envelope{
-			Topic: "test",
-			Message: &cluster.Message{
-				Data: []byte("dwwdwdw"),
-			},
-		}, time.Second).Result()
-		if err != nil {
-			panic(err)
-		}
-		envelopeResult, ok := result.(*cluster.EnvelopeResult)
-		if !ok {
-			panic("result is invalid type")
-		}
-		log.Println("RESULT", envelopeResult, "duration:", time.Since(start), pid)
-		if envelopeResult.RedirectPID != nil {
-			pid = cluster.PIDToActorPID(envelopeResult.RedirectPID)
-		}
+	response := engine.Request(clientPID, client.CreateProducer{
+		ProducerConfig: client.ProducerConfig{
+			Topic:      "test",
+			Serializer: remote.ProtoSerializer{},
+		},
+	}, time.Second)
+	result, err := response.Result()
+	if err != nil {
+		panic(err)
+	}
+	producerPID := result.(client.CreateProducerResult).PID
 
+	for {
+		engine.Send(producerPID, client.ProduceMessage{
+			Message: &actor.Ping{},
+		})
 		time.Sleep(time.Second)
 	}
-
 }

@@ -7,20 +7,19 @@ message Envelope {
     Message message = 2;
 }
 
+message ConsumerEnvelope {
+    Message message = 1;
+}
+
 message EnvelopeResult {
     bool success = 1;
     string error = 2;
     PID redirectPID = 3;
 }
 
-message MessageProcessedEvent {
-    string topic = 1;
-    Message message = 2;
-}
-
 message Message {
-	bytes data = 1;
-	int32 typeNameIndex = 2;
+    string typeName = 1;
+	bytes data = 2;
 }
 
 message LogEntry {
