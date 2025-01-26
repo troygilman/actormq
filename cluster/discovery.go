@@ -20,21 +20,21 @@ type DiscoveryConfig struct {
 	Logger *slog.Logger
 }
 
-type discovery struct {
-	nodes    map[string]*discoveryNodeMetadata
+type discoveryActor struct {
+	nodes    map[uint64]*discoveryNodeMetadata
 	repeater actor.SendRepeater
 }
 
 func NewDiscovery() actor.Producer {
 	return func() actor.Receiver {
-		return &discovery{}
+		return &discoveryActor{}
 	}
 }
 
-func (d *discovery) Receive(act *actor.Context) {
+func (d *discoveryActor) Receive(act *actor.Context) {
 	switch act.Message().(type) {
 	case actor.Initialized:
-		d.nodes = make(map[string]*discoveryNodeMetadata)
+		d.nodes = make(map[uint64]*discoveryNodeMetadata)
 
 	case actor.Started:
 		d.repeater = act.SendRepeat(act.PID(), sendPing{}, time.Second)
@@ -44,7 +44,7 @@ func (d *discovery) Receive(act *actor.Context) {
 
 	case *RegisterNode:
 		pid := act.Sender()
-		d.nodes[pid.String()] = &discoveryNodeMetadata{
+		d.nodes[pid.LookupKey()] = &discoveryNodeMetadata{
 			pid:      pid,
 			lastPong: time.Now(),
 		}
@@ -67,7 +67,7 @@ func (d *discovery) Receive(act *actor.Context) {
 
 	case *actor.Pong:
 		pid := act.Sender()
-		node, ok := d.nodes[pid.String()]
+		node, ok := d.nodes[pid.LookupKey()]
 		if !ok {
 			log.Println("could not find node:", pid.String())
 			return
@@ -76,7 +76,7 @@ func (d *discovery) Receive(act *actor.Context) {
 	}
 }
 
-func (d *discovery) sendActiveNodes(act *actor.Context) {
+func (d *discoveryActor) sendActiveNodes(act *actor.Context) {
 	nodes := make([]*PID, 0)
 	for _, node := range d.nodes {
 		nodes = append(nodes, ActorPIDToPID(node.pid))

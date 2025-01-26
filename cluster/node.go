@@ -51,7 +51,7 @@ type nodeActor struct {
 	commitIndex     uint64
 	lastApplied     uint64
 	votes           uint64
-	nodes           map[string]*nodeMetadata
+	nodes           map[uint64]*nodeMetadata
 	pendingCommands map[uint64]*commandMetadata
 	electionTimer   *timer.SendTimer
 	heartbeatTimer  *timer.SendTimer
@@ -68,7 +68,7 @@ func NewNode(config NodeConfig) actor.Producer {
 func (node *nodeActor) Receive(act *actor.Context) {
 	switch msg := act.Message().(type) {
 	case actor.Initialized:
-		node.nodes = make(map[string]*nodeMetadata)
+		node.nodes = make(map[uint64]*nodeMetadata)
 		node.pendingCommands = make(map[uint64]*commandMetadata)
 		node.electionTimer = timer.NewSendTimer(act.Engine(), act.PID(), electionTimeout{}, newElectionTimoutDuration(node.config))
 		node.heartbeatTimer = timer.NewSendTimer(act.Engine(), act.PID(), heartbeatTimeout{}, node.config.HeartbeatInterval)
@@ -118,13 +118,14 @@ func (node *nodeActor) Receive(act *actor.Context) {
 }
 
 func (node *nodeActor) handleActiveNodes(act *actor.Context, msg *ActiveNodes) {
-	node.nodes = make(map[string]*nodeMetadata)
+	node.nodes = make(map[uint64]*nodeMetadata)
 	lastLogIndex, _ := node.lastLogIndexAndTerm()
 	for _, pid := range msg.Nodes {
 		pid := PIDToActorPID(pid)
 		if !pidEquals(pid, act.PID()) {
-			if _, ok := node.nodes[pid.String()]; !ok {
-				node.nodes[pid.String()] = &nodeMetadata{
+			key := pid.LookupKey()
+			if _, ok := node.nodes[key]; !ok {
+				node.nodes[key] = &nodeMetadata{
 					pid:        pid,
 					nextIndex:  lastLogIndex + 1,
 					matchIndex: 0,
@@ -221,7 +222,7 @@ func (node *nodeActor) handleAppendEntries(act *actor.Context, msg *AppendEntrie
 
 func (node *nodeActor) handleAppendEntriesResult(act *actor.Context, msg *AppendEntriesResult) {
 	node.config.Logger.Info("handleAppendEntriesResult", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
-	metadata, ok := node.nodes[act.Sender().String()]
+	metadata, ok := node.nodes[act.Sender().LookupKey()]
 	if !ok {
 		node.config.Logger.Error("handleAppendEntriesResult", "pid", act.PID(), "sender", act.Sender(), "msg", msg, "error", errors.New("could not find PID"))
 		return
@@ -293,7 +294,7 @@ func (node *nodeActor) sendAppendEntriesAll(act *actor.Context) {
 }
 
 func (node *nodeActor) sendAppendEntries(act *actor.Context, pid *actor.PID) error {
-	metadata, ok := node.nodes[pid.String()]
+	metadata, ok := node.nodes[pid.LookupKey()]
 	if !ok {
 		return errors.New("server does not exist")
 	}
