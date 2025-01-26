@@ -32,7 +32,7 @@ func (topic *topicActor) Receive(act *actor.Context) {
 		topic.consumers = make(map[uint64]*actor.PID)
 
 	case actor.Started:
-		topic.messagesPID = act.SpawnChild(NewRaftNode(NewRaftNodeConfig().
+		topic.messagesPID = act.SpawnChild(NewNode(NewNodeConfig().
 			WithDiscoveryPID(topic.config.Discovery).
 			WithLogger(topic.config.Logger),
 		), "node")

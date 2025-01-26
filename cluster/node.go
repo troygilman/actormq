@@ -14,7 +14,7 @@ type (
 	electionTimeout  struct{}
 )
 
-type RaftNodeConfig struct {
+type NodeConfig struct {
 	DiscoveryPID        *actor.PID
 	Logger              *slog.Logger
 	ElectionMinServers  uint64
@@ -23,8 +23,8 @@ type RaftNodeConfig struct {
 	HeartbeatInterval   time.Duration
 }
 
-func NewRaftNodeConfig() RaftNodeConfig {
-	return RaftNodeConfig{
+func NewNodeConfig() NodeConfig {
+	return NodeConfig{
 		ElectionMinServers:  3,
 		ElectionMinInterval: 150 * time.Millisecond,
 		ElectionMaxInterval: 300 * time.Millisecond,
@@ -32,18 +32,18 @@ func NewRaftNodeConfig() RaftNodeConfig {
 	}
 }
 
-func (config RaftNodeConfig) WithDiscoveryPID(discoveryPID *actor.PID) RaftNodeConfig {
+func (config NodeConfig) WithDiscoveryPID(discoveryPID *actor.PID) NodeConfig {
 	config.DiscoveryPID = discoveryPID
 	return config
 }
 
-func (config RaftNodeConfig) WithLogger(logger *slog.Logger) RaftNodeConfig {
+func (config NodeConfig) WithLogger(logger *slog.Logger) NodeConfig {
 	config.Logger = logger
 	return config
 }
 
-type raftNodeActor struct {
-	config          RaftNodeConfig
+type nodeActor struct {
+	config          NodeConfig
 	leader          *actor.PID
 	currentTerm     uint64
 	votedFor        *actor.PID
@@ -57,15 +57,15 @@ type raftNodeActor struct {
 	heartbeatTimer  *timer.SendTimer
 }
 
-func NewRaftNode(config RaftNodeConfig) actor.Producer {
+func NewNode(config NodeConfig) actor.Producer {
 	return func() actor.Receiver {
-		return &raftNodeActor{
+		return &nodeActor{
 			config: config,
 		}
 	}
 }
 
-func (node *raftNodeActor) Receive(act *actor.Context) {
+func (node *nodeActor) Receive(act *actor.Context) {
 	switch msg := act.Message().(type) {
 	case actor.Initialized:
 		node.nodes = make(map[string]*nodeMetadata)
@@ -117,7 +117,7 @@ func (node *raftNodeActor) Receive(act *actor.Context) {
 	node.updateStateMachine(act)
 }
 
-func (node *raftNodeActor) handleActiveNodes(act *actor.Context, msg *ActiveNodes) {
+func (node *nodeActor) handleActiveNodes(act *actor.Context, msg *ActiveNodes) {
 	node.nodes = make(map[string]*nodeMetadata)
 	lastLogIndex, _ := node.lastLogIndexAndTerm()
 	for _, pid := range msg.Nodes {
@@ -135,7 +135,7 @@ func (node *raftNodeActor) handleActiveNodes(act *actor.Context, msg *ActiveNode
 	node.config.Logger.Info("handleActiveNodes", "msg", msg, "nodes", node.nodes)
 }
 
-func (node *raftNodeActor) handleMessage(act *actor.Context, msg *Message) {
+func (node *nodeActor) handleMessage(act *actor.Context, msg *Message) {
 	node.config.Logger.Info("handleMessage", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
 	if pidEquals(node.leader, act.PID()) {
 		node.log = append(node.log, &LogEntry{
@@ -159,7 +159,7 @@ func (node *raftNodeActor) handleMessage(act *actor.Context, msg *Message) {
 	}
 }
 
-func (node *raftNodeActor) handleAppendEntries(act *actor.Context, msg *AppendEntries) {
+func (node *nodeActor) handleAppendEntries(act *actor.Context, msg *AppendEntries) {
 	result := &AppendEntriesResult{}
 	defer func() {
 		result.Term = node.currentTerm
@@ -219,7 +219,7 @@ func (node *raftNodeActor) handleAppendEntries(act *actor.Context, msg *AppendEn
 	node.electionTimer.Reset(newElectionTimoutDuration(node.config))
 }
 
-func (node *raftNodeActor) handleAppendEntriesResult(act *actor.Context, msg *AppendEntriesResult) {
+func (node *nodeActor) handleAppendEntriesResult(act *actor.Context, msg *AppendEntriesResult) {
 	node.config.Logger.Info("handleAppendEntriesResult", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
 	metadata, ok := node.nodes[act.Sender().String()]
 	if !ok {
@@ -240,7 +240,7 @@ func (node *raftNodeActor) handleAppendEntriesResult(act *actor.Context, msg *Ap
 	}
 }
 
-func (node *raftNodeActor) handleRequestVote(act *actor.Context, msg *RequestVote) {
+func (node *nodeActor) handleRequestVote(act *actor.Context, msg *RequestVote) {
 	result := &RequestVoteResult{}
 	defer func() {
 		result.Term = node.currentTerm
@@ -267,7 +267,7 @@ func (node *raftNodeActor) handleRequestVote(act *actor.Context, msg *RequestVot
 	}
 }
 
-func (node *raftNodeActor) handleRequestVoteResult(act *actor.Context, msg *RequestVoteResult) {
+func (node *nodeActor) handleRequestVoteResult(act *actor.Context, msg *RequestVoteResult) {
 	node.config.Logger.Info("handleRequestVoteResult", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
 	if msg.VoteGranted && msg.Term == node.currentTerm && !pidEquals(node.leader, act.PID()) {
 		node.votes++
@@ -284,7 +284,7 @@ func (node *raftNodeActor) handleRequestVoteResult(act *actor.Context, msg *Requ
 	}
 }
 
-func (node *raftNodeActor) sendAppendEntriesAll(act *actor.Context) {
+func (node *nodeActor) sendAppendEntriesAll(act *actor.Context) {
 	for _, metadata := range node.nodes {
 		if err := node.sendAppendEntries(act, metadata.pid); err != nil {
 			node.config.Logger.Error("Sending AppendEntries for "+metadata.pid.String(), "pid", act.PID(), "error", err.Error())
@@ -292,7 +292,7 @@ func (node *raftNodeActor) sendAppendEntriesAll(act *actor.Context) {
 	}
 }
 
-func (node *raftNodeActor) sendAppendEntries(act *actor.Context, pid *actor.PID) error {
+func (node *nodeActor) sendAppendEntries(act *actor.Context, pid *actor.PID) error {
 	metadata, ok := node.nodes[pid.String()]
 	if !ok {
 		return errors.New("server does not exist")
@@ -324,7 +324,7 @@ func (node *raftNodeActor) sendAppendEntries(act *actor.Context, pid *actor.PID)
 	return nil
 }
 
-func (node *raftNodeActor) startElection(act *actor.Context) {
+func (node *nodeActor) startElection(act *actor.Context) {
 	defer func() {
 		node.config.Logger.Info("Starting election", "pid", act.PID(), "term", node.currentTerm)
 	}()
@@ -347,7 +347,7 @@ func (node *raftNodeActor) startElection(act *actor.Context) {
 	}
 }
 
-func (node *raftNodeActor) lastLogIndexAndTerm() (uint64, uint64) {
+func (node *nodeActor) lastLogIndexAndTerm() (uint64, uint64) {
 	var lastLogIndex uint64 = uint64(len(node.log))
 	var lastLogTerm uint64 = 0
 	if lastLogIndex > 0 {
@@ -356,7 +356,7 @@ func (node *raftNodeActor) lastLogIndexAndTerm() (uint64, uint64) {
 	return lastLogIndex, lastLogTerm
 }
 
-func (node *raftNodeActor) handleExternalTerm(term uint64) {
+func (node *nodeActor) handleExternalTerm(term uint64) {
 	if term > node.currentTerm {
 		node.currentTerm = term
 		node.leader = nil
@@ -364,7 +364,7 @@ func (node *raftNodeActor) handleExternalTerm(term uint64) {
 	}
 }
 
-func (node *raftNodeActor) updateStateMachine(act *actor.Context) {
+func (node *nodeActor) updateStateMachine(act *actor.Context) {
 	if pidEquals(node.leader, act.PID()) {
 		for i := uint64(len(node.log)); i >= node.commitIndex+1; i-- {
 			if node.log[i-1].Term == node.currentTerm {
@@ -396,7 +396,7 @@ func (node *raftNodeActor) updateStateMachine(act *actor.Context) {
 	}
 }
 
-func (node *raftNodeActor) applyMessage(act *actor.Context, msg *Message) {
+func (node *nodeActor) applyMessage(act *actor.Context, msg *Message) {
 	// log.Println("applying msg")
 	act.Send(act.Parent(), &MessageProcessedEvent{
 		Topic:   "",

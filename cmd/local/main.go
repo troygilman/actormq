@@ -28,6 +28,7 @@ func main() {
 	config := cluster.TopicConfig{
 		Discovery: discoveryPID,
 		Logger:    slog.New(slog.NewJSONHandler(io.Discard, nil)),
+		// Logger: slog.Default(),
 	}
 
 	nodes := []*actor.PID{
@@ -45,7 +46,7 @@ func main() {
 	for {
 		start := time.Now()
 		result, err := engine.Request(nodePID, &cluster.Message{
-			// Data: []byte("dwwdwdw"),
+			Data: []byte("dwwdwdw"),
 		}, time.Second).Result()
 		if err != nil {
 			panic(err)
@@ -54,12 +55,12 @@ func main() {
 		if !ok {
 			panic("result is invalid type")
 		}
-		log.Println("RESULT", messageResult, "duration:", time.Since(start))
+		log.Println("RESULT", messageResult, "duration:", time.Since(start), nodePID)
 		if messageResult.RedirectPID != nil {
 			nodePID = cluster.PIDToActorPID(messageResult.RedirectPID)
 		}
 
-		time.Sleep(time.Millisecond)
+		time.Sleep(time.Second)
 	}
 
 }

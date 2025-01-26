@@ -36,7 +36,7 @@ func NewClient(config ClientConfig) actor.Producer {
 
 func (client *clientActor) Receive(act *actor.Context) {
 	// log.Printf("%s - %T: %+v\n", act.PID().String(), act.Message(), act.Message())
-	switch act.Message().(type) {
+	switch msg := act.Message().(type) {
 	case actor.Initialized:
 		client.nodes = make(map[string]*nodeMetadata)
 		for _, pid := range client.config.Nodes {
@@ -79,7 +79,7 @@ func (client *clientActor) Receive(act *actor.Context) {
 		}
 
 	case *cluster.MessageProcessedEvent:
-		log.Println("consumed msg")
+		log.Println("consumed msg", msg)
 
 	}
 }

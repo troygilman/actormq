@@ -8,7 +8,7 @@ import (
 	"github.com/anthdm/hollywood/actor"
 )
 
-func newElectionTimoutDuration(config RaftNodeConfig) time.Duration {
+func newElectionTimoutDuration(config NodeConfig) time.Duration {
 	return config.ElectionMinInterval + time.Duration(rand.Intn(int(config.ElectionMaxInterval)-int(config.ElectionMinInterval)))
 }
 

@@ -23,7 +23,7 @@ func main() {
 		panic(err)
 	}
 
-	engine.Spawn(cluster.NewRaftNode(cluster.RaftNodeConfig{
+	engine.Spawn(cluster.NewNode(cluster.NodeConfig{
 		DiscoveryPID: actor.NewPID(discoveryAddr, discoveryID),
 		Logger:       slog.Default(),
 	}), "node")
