@@ -64,7 +64,8 @@ func (client *clientActor) Receive(act *actor.Context) {
 	case CreateConsumer:
 		for _, node := range client.nodes {
 			result, err := handleResponse[*cluster.RegisterConsumerResult](act.Request(node.pid, &cluster.RegisterConsumer{
-				PID: cluster.ActorPIDToPID(act.PID()),
+				Topic: msg.Topic,
+				PID:   cluster.ActorPIDToPID(act.PID()),
 			}, 10*time.Second))
 			if err != nil {
 				log.Println(err)

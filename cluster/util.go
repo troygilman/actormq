@@ -12,13 +12,6 @@ func newElectionTimoutDuration(config NodeConfig) time.Duration {
 	return config.ElectionMinInterval + time.Duration(rand.Intn(int(config.ElectionMaxInterval)-int(config.ElectionMinInterval)))
 }
 
-func sendWithDelay(act *actor.Context, pid *actor.PID, msg any, delay time.Duration) {
-	go func() {
-		time.Sleep(delay)
-		act.Send(pid, msg)
-	}()
-}
-
 func pidEquals(pid1 *actor.PID, pid2 *actor.PID) bool {
 	if pid1 == nil && pid2 == nil {
 		return true

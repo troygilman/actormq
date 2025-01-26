@@ -19,45 +19,45 @@ func main() {
 
 	discoveryPID := engine.Spawn(cluster.NewDiscovery(), "discovery")
 
-	// config := cluster.NewRaftNodeConfig().
-	// 	WithDiscoveryPID(discoveryPID).
-	// 	WithLogger(slog.New(slog.NewJSONHandler(io.Discard, nil))).
-	// 	// WithLogger(slog.Default()).
-	// 	WithMessageHandler(nil)
-
-	config := cluster.TopicConfig{
+	config := cluster.PodConfig{
+		Topics:    []string{"test"},
 		Discovery: discoveryPID,
 		Logger:    slog.New(slog.NewJSONHandler(io.Discard, nil)),
 		// Logger: slog.Default(),
 	}
 
-	nodes := []*actor.PID{
-		engine.Spawn(cluster.NewTopic(config), "topic"),
-		engine.Spawn(cluster.NewTopic(config), "topic"),
-		engine.Spawn(cluster.NewTopic(config), "topic"),
+	pods := []*actor.PID{
+		engine.Spawn(cluster.NewPod(config), "1"),
+		engine.Spawn(cluster.NewPod(config), "2"),
+		engine.Spawn(cluster.NewPod(config), "3"),
 	}
 
 	clientPID := engine.Spawn(client.NewClient(client.ClientConfig{
-		Nodes: nodes,
+		Nodes: pods,
 	}), "client")
-	engine.Send(clientPID, client.CreateConsumer{})
+	engine.Send(clientPID, client.CreateConsumer{
+		Topic: "test",
+	})
 
-	nodePID := nodes[0]
+	pid := pods[0]
 	for {
 		start := time.Now()
-		result, err := engine.Request(nodePID, &cluster.Message{
-			Data: []byte("dwwdwdw"),
+		result, err := engine.Request(pid, &cluster.Envelope{
+			Topic: "test",
+			Message: &cluster.Message{
+				Data: []byte("dwwdwdw"),
+			},
 		}, time.Second).Result()
 		if err != nil {
 			panic(err)
 		}
-		messageResult, ok := result.(*cluster.MessageResult)
+		envelopeResult, ok := result.(*cluster.EnvelopeResult)
 		if !ok {
 			panic("result is invalid type")
 		}
-		log.Println("RESULT", messageResult, "duration:", time.Since(start), nodePID)
-		if messageResult.RedirectPID != nil {
-			nodePID = cluster.PIDToActorPID(messageResult.RedirectPID)
+		log.Println("RESULT", envelopeResult, "duration:", time.Since(start), pid)
+		if envelopeResult.RedirectPID != nil {
+			pid = cluster.PIDToActorPID(envelopeResult.RedirectPID)
 		}
 
 		time.Sleep(time.Second)

@@ -2,6 +2,17 @@ syntax = "proto3";
 package cluster;
 option go_package = "github.com/troygilman0/actormq/cluster";
 
+message Envelope {
+    string topic = 1;
+    Message message = 2;
+}
+
+message EnvelopeResult {
+    bool success = 1;
+    string error = 2;
+    PID redirectPID = 3;
+}
+
 message MessageProcessedEvent {
     string topic = 1;
     Message message = 2;
@@ -10,11 +21,6 @@ message MessageProcessedEvent {
 message Message {
 	bytes data = 1;
 	int32 typeNameIndex = 2;
-}
-
-message MessageResult {
-    bool success = 1;
-    PID redirectPID = 2;
 }
 
 message LogEntry {

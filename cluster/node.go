@@ -43,18 +43,18 @@ func (config NodeConfig) WithLogger(logger *slog.Logger) NodeConfig {
 }
 
 type nodeActor struct {
-	config          NodeConfig
-	leader          *actor.PID
-	currentTerm     uint64
-	votedFor        *actor.PID
-	log             []*LogEntry
-	commitIndex     uint64
-	lastApplied     uint64
-	votes           uint64
-	nodes           map[uint64]*nodeMetadata
-	pendingCommands map[uint64]*commandMetadata
-	electionTimer   *timer.SendTimer
-	heartbeatTimer  *timer.SendTimer
+	config            NodeConfig
+	leader            *actor.PID
+	currentTerm       uint64
+	votedFor          *actor.PID
+	log               []*LogEntry
+	commitIndex       uint64
+	lastApplied       uint64
+	votes             uint64
+	nodes             map[uint64]*nodeMetadata
+	pendingCommands   map[uint64]*commandMetadata
+	heartbeatRepeater actor.SendRepeater
+	electionTimer     *timer.SendTimer
 }
 
 func NewNode(config NodeConfig) actor.Producer {
@@ -70,10 +70,10 @@ func (node *nodeActor) Receive(act *actor.Context) {
 	case actor.Initialized:
 		node.nodes = make(map[uint64]*nodeMetadata)
 		node.pendingCommands = make(map[uint64]*commandMetadata)
-		node.electionTimer = timer.NewSendTimer(act.Engine(), act.PID(), electionTimeout{}, newElectionTimoutDuration(node.config))
-		node.heartbeatTimer = timer.NewSendTimer(act.Engine(), act.PID(), heartbeatTimeout{}, node.config.HeartbeatInterval)
 
 	case actor.Started:
+		node.electionTimer = timer.NewSendTimer(act.Engine(), act.PID(), electionTimeout{}, newElectionTimoutDuration(node.config))
+		node.heartbeatRepeater = act.SendRepeat(act.PID(), heartbeatTimeout{}, node.config.HeartbeatInterval)
 		act.Send(node.config.DiscoveryPID, &RegisterNode{})
 
 	case *ActiveNodes:
@@ -108,7 +108,6 @@ func (node *nodeActor) Receive(act *actor.Context) {
 		}
 
 	case heartbeatTimeout:
-		node.heartbeatTimer.Reset(node.config.HeartbeatInterval)
 		if pidEquals(node.leader, act.PID()) {
 			node.sendAppendEntriesAll(act)
 		}
@@ -153,7 +152,7 @@ func (node *nodeActor) handleMessage(act *actor.Context, msg *Message) {
 		if node.leader != nil {
 			redirectPID = ActorPIDToPID(ParentPID(node.leader))
 		}
-		act.Send(act.Sender(), &MessageResult{
+		act.Send(act.Sender(), &EnvelopeResult{
 			Success:     false,
 			RedirectPID: redirectPID,
 		})
@@ -388,7 +387,7 @@ func (node *nodeActor) updateStateMachine(act *actor.Context) {
 		node.applyMessage(act, entry.GetMessage())
 		command, ok := node.pendingCommands[node.lastApplied]
 		if ok {
-			act.Send(command.sender, &MessageResult{
+			act.Send(command.sender, &EnvelopeResult{
 				Success: true,
 			})
 			delete(node.pendingCommands, node.lastApplied)
