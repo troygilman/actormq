@@ -33,6 +33,7 @@ func (pod *podActor) Receive(act *actor.Context) {
 	case actor.Started:
 		for _, topic := range pod.config.Topics {
 			pod.topics[topic] = act.SpawnChild(NewTopic(TopicConfig{
+				Topic:     topic,
 				Discovery: pod.config.Discovery,
 				Logger:    pod.config.Logger,
 			}), "topic", actor.WithID(topic))

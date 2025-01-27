@@ -7,6 +7,7 @@ import (
 )
 
 type TopicConfig struct {
+	Topic     string
 	Discovery *actor.PID
 	Logger    *slog.Logger
 }
@@ -32,10 +33,11 @@ func (topic *topicActor) Receive(act *actor.Context) {
 		topic.consumers = make(map[uint64]*actor.PID)
 
 	case actor.Started:
-		topic.messagesPID = act.SpawnChild(NewNode(NewNodeConfig().
+		config := NewNodeConfig().
 			WithDiscoveryPID(topic.config.Discovery).
-			WithLogger(topic.config.Logger),
-		), "node")
+			WithLogger(topic.config.Logger)
+		config.Topic = topic.config.Topic
+		topic.messagesPID = act.SpawnChild(NewNode(config), "node")
 		// topic.consumerPID = act.SpawnChild(NewRaftNode(NewRaftNodeConfig().
 		// 	WithDiscoveryPID(topic.config.Discovery).
 		// 	WithLogger(topic.config.Logger),

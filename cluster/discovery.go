@@ -21,6 +21,7 @@ type DiscoveryConfig struct {
 }
 
 type discoveryActor struct {
+	topics   map[string]map[uint64]struct{}
 	nodes    map[uint64]*discoveryNodeMetadata
 	repeater actor.SendRepeater
 }
@@ -32,8 +33,9 @@ func NewDiscovery() actor.Producer {
 }
 
 func (d *discoveryActor) Receive(act *actor.Context) {
-	switch act.Message().(type) {
+	switch msg := act.Message().(type) {
 	case actor.Initialized:
+		d.topics = make(map[string]map[uint64]struct{})
 		d.nodes = make(map[uint64]*discoveryNodeMetadata)
 
 	case actor.Started:
@@ -44,25 +46,35 @@ func (d *discoveryActor) Receive(act *actor.Context) {
 
 	case *RegisterNode:
 		pid := act.Sender()
+		topic, ok := d.topics[msg.Topic]
+		if !ok {
+			topic = make(map[uint64]struct{})
+			d.topics[msg.Topic] = topic
+		}
+		topic[pid.LookupKey()] = struct{}{}
 		d.nodes[pid.LookupKey()] = &discoveryNodeMetadata{
 			pid:      pid,
 			lastPong: time.Now(),
 		}
-		d.sendActiveNodes(act)
-		log.Println("registered node:", pid.String())
+		d.sendActiveNodes(act, msg.Topic)
+		log.Println("registered node", pid.String(), "on topic", msg.Topic)
 
 	case sendPing:
-		shouldSendActiveNodes := false
-		for key, node := range d.nodes {
-			if time.Since(node.lastPong) > 5*time.Second {
-				delete(d.nodes, key)
-				shouldSendActiveNodes = true
-			} else {
-				act.Send(node.pid, &actor.Ping{})
+		updatedTopics := make(map[string]struct{})
+		for topic, keys := range d.topics {
+			for key := range keys {
+				node := d.nodes[key]
+				if time.Since(node.lastPong) > 5*time.Second {
+					delete(d.nodes, key)
+					delete(keys, key)
+					updatedTopics[topic] = struct{}{}
+				} else {
+					act.Send(node.pid, &actor.Ping{})
+				}
 			}
 		}
-		if shouldSendActiveNodes {
-			d.sendActiveNodes(act)
+		for topic := range updatedTopics {
+			d.sendActiveNodes(act, topic)
 		}
 
 	case *actor.Pong:
@@ -76,13 +88,13 @@ func (d *discoveryActor) Receive(act *actor.Context) {
 	}
 }
 
-func (d *discoveryActor) sendActiveNodes(act *actor.Context) {
+func (d *discoveryActor) sendActiveNodes(act *actor.Context, topic string) {
 	nodes := make([]*PID, 0)
-	for _, node := range d.nodes {
-		nodes = append(nodes, ActorPIDToPID(node.pid))
+	for key := range d.topics[topic] {
+		nodes = append(nodes, ActorPIDToPID(d.nodes[key].pid))
 	}
-	for _, node := range d.nodes {
-		act.Send(node.pid, &ActiveNodes{
+	for key := range d.topics[topic] {
+		act.Send(d.nodes[key].pid, &ActiveNodes{
 			Nodes: nodes,
 		})
 	}

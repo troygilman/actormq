@@ -15,6 +15,7 @@ type (
 )
 
 type NodeConfig struct {
+	Topic               string
 	DiscoveryPID        *actor.PID
 	Logger              *slog.Logger
 	ElectionMinServers  uint64
@@ -74,7 +75,7 @@ func (node *nodeActor) Receive(act *actor.Context) {
 	case actor.Started:
 		node.electionTimer = timer.NewSendTimer(act.Engine(), act.PID(), electionTimeout{}, newElectionTimoutDuration(node.config))
 		node.heartbeatRepeater = act.SendRepeat(act.PID(), heartbeatTimeout{}, node.config.HeartbeatInterval)
-		act.Send(node.config.DiscoveryPID, &RegisterNode{})
+		act.Send(node.config.DiscoveryPID, &RegisterNode{Topic: node.config.Topic})
 
 	case *ActiveNodes:
 		node.handleActiveNodes(act, msg)

@@ -56,7 +56,9 @@ message PID {
 	string ID = 2;
 }
 
-message RegisterNode {}
+message RegisterNode {
+    string topic = 1;
+}
 
 message ActiveNodes {
 	repeated PID nodes = 1;
