@@ -1,6 +1,6 @@
 syntax = "proto3";
 package cluster;
-option go_package = "github.com/troygilman0/actormq/cluster";
+option go_package = "github.com/troygilman/actormq/cluster";
 
 message Envelope {
     string topic = 1;

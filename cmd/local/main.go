@@ -7,8 +7,8 @@ import (
 
 	"github.com/anthdm/hollywood/actor"
 	"github.com/anthdm/hollywood/remote"
-	"github.com/troygilman0/actormq/client"
-	"github.com/troygilman0/actormq/cluster"
+	"github.com/troygilman/actormq/client"
+	"github.com/troygilman/actormq/cluster"
 )
 
 func main() {

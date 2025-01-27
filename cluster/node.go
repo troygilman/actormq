@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
-	"github.com/troygilman0/actormq/cluster/timer"
+	"github.com/troygilman/actormq/cluster/timer"
 )
 
 type (
