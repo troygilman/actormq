@@ -9,7 +9,7 @@ import (
 type topicList struct {
 }
 
-func (tl *topicList) Update() error {
+func (tl *topicList) Update(events []any) error {
 	return nil
 }
 

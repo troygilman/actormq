@@ -21,7 +21,7 @@ type Game struct {
 
 func (g *Game) Update() error {
 	for _, widget := range g.widgets {
-		if err := widget.widget.Update(); err != nil {
+		if err := widget.Update(); err != nil {
 			return err
 		}
 	}
@@ -71,11 +71,26 @@ func setup() *Game {
 		engine.Spawn(cluster.NewPod(config), "pod"),
 	}
 
-	return &Game{
-		engine: engine,
-		client: engine.Spawn(client.NewClient(client.ClientConfig{Nodes: pods}), "client"),
-		widgets: []*WidgetContainer{
-			NewWidgetContainer(&topicList{}, image.Rect(100, 100, 200, 200)),
-		},
+	clientPID := engine.Spawn(client.NewClient(client.ClientConfig{Nodes: pods}), "client")
+	game := &Game{
+		engine:  engine,
+		client:  clientPID,
+		widgets: []*WidgetContainer{},
 	}
+
+	game.createWidgetContainer(&topicList{}, image.Rect(100, 100, 200, 200))
+	return game
+}
+
+func (g *Game) createWidgetContainer(widget Widget, rect image.Rectangle) {
+	events := make(chan any, 100)
+	adapter := g.engine.Spawn(NewAdapter(events), "adapter")
+	g.widgets = append(g.widgets, &WidgetContainer{
+		widget:  widget,
+		rect:    rect,
+		engine:  g.engine,
+		client:  g.client,
+		adapter: adapter,
+		events:  events,
+	})
 }

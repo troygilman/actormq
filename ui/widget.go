@@ -3,23 +3,38 @@ package ui
 import (
 	"image"
 
+	"github.com/anthdm/hollywood/actor"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Widget interface {
-	Update() error
+	Update(events []any) error
 	Draw(screen *ebiten.Image)
 }
 
 type WidgetContainer struct {
-	widget Widget
-	rect   image.Rectangle
+	widget  Widget
+	rect    image.Rectangle
+	engine  *actor.Engine
+	client  *actor.PID
+	adapter *actor.PID
+	events  <-chan any
 }
 
-func NewWidgetContainer(widget Widget, rect image.Rectangle) *WidgetContainer {
-	return &WidgetContainer{
-		widget: widget,
-		rect:   rect,
+func (w *WidgetContainer) Update() error {
+	events := pollEvents(w.events)
+	return w.widget.Update(events)
+}
+
+func pollEvents(c <-chan any) []any {
+	events := []any{}
+	for {
+		select {
+		case event := <-c:
+			events = append(events, event)
+		default:
+			return events
+		}
 	}
 }
 
