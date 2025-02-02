@@ -6,22 +6,24 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-type Widget struct {
-	game   ebiten.Game
+type Widget interface {
+	Update() error
+	Draw(screen *ebiten.Image)
+}
+
+type WidgetContainer struct {
+	widget Widget
 	rect   image.Rectangle
-	window *ebiten.Image
 }
 
-func NewWidget(game ebiten.Game, rect image.Rectangle) *Widget {
-	return &Widget{
-		game: game,
-		rect: rect,
+func NewWidgetContainer(widget Widget, rect image.Rectangle) *WidgetContainer {
+	return &WidgetContainer{
+		widget: widget,
+		rect:   rect,
 	}
 }
 
-func (w *Widget) Draw(screen *ebiten.Image) {
-	if w.window == nil {
-		w.window = screen.SubImage(w.rect).(*ebiten.Image)
-	}
-	w.game.Draw(w.window)
+func (w *WidgetContainer) Draw(screen *ebiten.Image) {
+	window := screen.SubImage(w.rect).(*ebiten.Image)
+	w.widget.Draw(window)
 }

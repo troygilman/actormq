@@ -16,12 +16,12 @@ import (
 type Game struct {
 	engine  *actor.Engine
 	client  *actor.PID
-	widgets []*Widget
+	widgets []*WidgetContainer
 }
 
 func (g *Game) Update() error {
 	for _, widget := range g.widgets {
-		if err := widget.game.Update(); err != nil {
+		if err := widget.widget.Update(); err != nil {
 			return err
 		}
 	}
@@ -36,9 +36,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	// for _, widget := range g.widgets {
-	// 	widget.width, widget.height = widget.game.Layout(widget.width, widget.height)
-	// }
 	return outsideWidth, outsideHeight
 }
 
@@ -77,8 +74,8 @@ func setup() *Game {
 	return &Game{
 		engine: engine,
 		client: engine.Spawn(client.NewClient(client.ClientConfig{Nodes: pods}), "client"),
-		widgets: []*Widget{
-			NewWidget(&topicList{}, image.Rect(0, 0, 100, 100)),
+		widgets: []*WidgetContainer{
+			NewWidgetContainer(&topicList{}, image.Rect(100, 100, 200, 200)),
 		},
 	}
 }

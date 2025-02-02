@@ -13,10 +13,6 @@ func (tl *topicList) Update() error {
 	return nil
 }
 
-func (tl *topicList) Draw(screen *ebiten.Image) {
-	screen.Fill(color.White)
-}
-
-func (tl *topicList) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return outsideWidth, outsideHeight
+func (tl *topicList) Draw(window *ebiten.Image) {
+	window.Fill(color.White)
 }
