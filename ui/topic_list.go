@@ -9,10 +9,14 @@ import (
 type topicList struct {
 }
 
-func (tl *topicList) Update(events []any) error {
+func (tl *topicList) Update() error {
 	return nil
 }
 
 func (tl *topicList) Draw(window *ebiten.Image) {
 	window.Fill(color.White)
+}
+
+func (tl *topicList) Layout(width int, height int) (int, int) {
+	return width, height
 }
