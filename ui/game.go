@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"image"
 	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -9,11 +10,17 @@ import (
 
 func Run() {
 	// game := setup()
+	//
+
+	container := types.NewContainer(
+		types.NewWidget(&types.Draggable{}, image.Rect(100, 100, 200, 200)),
+		types.NewWidget(&types.Draggable{}, image.Rect(400, 400, 500, 500)),
+	)
 
 	ebiten.SetWindowSize(1920, 1080)
 	ebiten.SetWindowTitle("Hello, World!")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	if err := ebiten.RunGame(types.NewContainer(&topicList{})); err != nil {
+	if err := ebiten.RunGame(container); err != nil {
 		log.Fatal(err)
 	}
 }

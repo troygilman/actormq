@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"image"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -17,6 +18,6 @@ func (tl *topicList) Draw(window *ebiten.Image) {
 	window.Fill(color.White)
 }
 
-func (tl *topicList) Layout(width int, height int) (int, int) {
-	return width, height
+func (tl *topicList) Layout(rect image.Rectangle) image.Rectangle {
+	return rect
 }
