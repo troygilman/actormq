@@ -7,21 +7,21 @@ import (
 	"github.com/anthdm/hollywood/remote"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/troygilman/actormq/client"
-	"github.com/troygilman/tui/common"
+	"github.com/troygilman/actormq/tui/util"
 )
 
 func NewTopicsModel(engine *actor.Engine, client *actor.PID) TopicsModel {
 	return TopicsModel{
 		engine:  engine,
 		client:  client,
-		adapter: common.NewAdapter(engine, common.BasicAdapterFunc),
+		adapter: util.NewAdapter(engine, util.BasicAdapterFunc),
 	}
 }
 
 type TopicsModel struct {
 	engine  *actor.Engine
 	client  *actor.PID
-	adapter common.Adapter
+	adapter util.Adapter
 }
 
 func (model TopicsModel) Init() tea.Cmd {

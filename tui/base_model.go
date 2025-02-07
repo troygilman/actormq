@@ -10,7 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/troygilman/actormq/client"
 	"github.com/troygilman/actormq/cluster"
-	"github.com/troygilman/tui/common"
+	"github.com/troygilman/actormq/tui/util"
 )
 
 func Run() error {
@@ -54,7 +54,7 @@ func NewBaseModel() (*BaseModel, error) {
 
 	client := engine.Spawn(client.NewClient(client.ClientConfig{Nodes: pods}), "client")
 
-	adapter := common.NewAdapter(engine, common.BasicAdapterFunc)
+	adapter := util.NewAdapter(engine, util.BasicAdapterFunc)
 
 	return &BaseModel{
 		engine:      engine,
@@ -67,7 +67,7 @@ func NewBaseModel() (*BaseModel, error) {
 type BaseModel struct {
 	engine      *actor.Engine
 	client      *actor.PID
-	adapter     common.Adapter
+	adapter     util.Adapter
 	topicsModel tea.Model
 }
 
