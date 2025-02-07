@@ -18,6 +18,7 @@ func Run() {
 	)
 
 	ebiten.SetWindowSize(1920, 1080)
+	ebiten.SetTPS(144)
 	ebiten.SetWindowTitle("Hello, World!")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	if err := ebiten.RunGame(container); err != nil {

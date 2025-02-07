@@ -3,7 +3,6 @@ package types
 import (
 	"image"
 	"image/color"
-	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -19,7 +18,6 @@ func (draggable *Draggable) Update() error {
 	cursorX, cursorY := ebiten.CursorPosition()
 
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-		log.Println("PRESS", cursorX, cursorY, draggable.rect)
 		if draggable.rect.Min.X <= cursorX && draggable.rect.Min.Y <= cursorY && draggable.rect.Max.X >= cursorX && draggable.rect.Max.Y >= cursorY {
 			draggable.dragging = true
 			draggable.cursorPosition = image.Pt(cursorX, cursorY)
