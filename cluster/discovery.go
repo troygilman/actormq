@@ -57,7 +57,7 @@ func (d *discoveryActor) Receive(act *actor.Context) {
 			lastPong: time.Now(),
 		}
 		d.sendActiveNodes(act, msg.Topic)
-		log.Println("registered node", pid.String(), "on topic", msg.Topic)
+		// log.Println("registered node", pid.String(), "on topic", msg.Topic)
 
 	case sendPing:
 		updatedTopics := make(map[string]struct{})

@@ -43,7 +43,7 @@ func (consumer *consumerActor) Receive(act *actor.Context) {
 		if !result.Success {
 			panic(result.Error)
 		}
-		log.Println("registered consumer")
+		// log.Println("registered consumer")
 
 	case *cluster.ConsumerEnvelope:
 		message, err := consumer.config.Deserializer.Deserialize(msg.Message.Data, msg.Message.TypeName)

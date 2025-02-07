@@ -10,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/troygilman/actormq/client"
 	"github.com/troygilman/actormq/cluster"
+	"github.com/troygilman/tui/common"
 )
 
 func Run() error {
@@ -17,7 +18,14 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-	program := tea.NewProgram(model) // tea.WithAltScreen(),
+
+	file, err := tea.LogToFile("tmp/application.log", "")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	program := tea.NewProgram(model, tea.WithAltScreen())
 
 	_, err = program.Run()
 	return err
@@ -46,34 +54,28 @@ func NewBaseModel() (*BaseModel, error) {
 
 	client := engine.Spawn(client.NewClient(client.ClientConfig{Nodes: pods}), "client")
 
-	msgs := make(chan tea.Msg, 100)
-	adapter := engine.SpawnFunc(func(act *actor.Context) {
-		switch msg := act.Message().(type) {
-		case actor.Initialized, actor.Started, actor.Stopped:
-		default:
-			msgs <- msg
-		}
-	}, "adapter")
+	adapter := common.NewAdapter(engine, common.BasicAdapterFunc)
 
 	return &BaseModel{
-		engine:  engine,
-		client:  client,
-		adapter: adapter,
-		msgs:    msgs,
+		engine:      engine,
+		client:      client,
+		adapter:     adapter,
+		topicsModel: NewTopicsModel(engine, client),
 	}, nil
 }
 
 type BaseModel struct {
-	engine  *actor.Engine
-	client  *actor.PID
-	adapter *actor.PID
-	msgs    chan tea.Msg
+	engine      *actor.Engine
+	client      *actor.PID
+	adapter     common.Adapter
+	topicsModel tea.Model
 }
 
 func (model BaseModel) Init() tea.Cmd {
 	return tea.Batch(
-		PollExternalMessages(model.msgs),
-		model.send(model.client, client.CreateConsumer{
+		model.adapter.Init(),
+		model.topicsModel.Init(),
+		model.adapter.Send(model.client, client.CreateConsumer{
 			ConsumerConfig: client.ConsumerConfig{
 				Topic:        "test",
 				Deserializer: remote.ProtoSerializer{},
@@ -83,28 +85,32 @@ func (model BaseModel) Init() tea.Cmd {
 }
 
 func (model *BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return model, tea.Quit
 		}
-	case ExternalMessage:
-		switch msg.Msg.(type) {
-		case client.CreateConsumerResult:
-			log.Println("NEW CONSUMER")
-		}
-		return model, tea.Batch(
-			PollExternalMessages(model.msgs),
-		)
 	}
-	return model, nil
+
+	adapterMsg, adapterCmd := model.adapter.Poll(msg)
+	if adapterMsg != nil {
+		switch adapterMsg := adapterMsg.(type) {
+		case client.CreateConsumerResult:
+			log.Println("BASE - CONSUMER", adapterMsg)
+		}
+	}
+
+	var topicsCmd tea.Cmd
+	model.topicsModel, topicsCmd = model.topicsModel.Update(msg)
+
+	return model, tea.Batch(
+		adapterCmd,
+		topicsCmd,
+	)
 }
 
 func (model BaseModel) View() string {
-	return ""
-}
-
-func (model BaseModel) send(pid *actor.PID, msg any) tea.Cmd {
-	return SendWithSender(model.engine, pid, msg, model.adapter)
+	return model.topicsModel.View()
 }
