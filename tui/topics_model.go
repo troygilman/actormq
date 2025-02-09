@@ -37,15 +37,16 @@ func (model TopicsModel) Init() tea.Cmd {
 }
 
 func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	cmds := util.NewCommandBuilder()
+
 	msg, adapterCmd := model.adapter.Message(msg)
+	cmds.AddCmd(adapterCmd)
 	switch msg := msg.(type) {
 	case client.CreateConsumerResult:
 		log.Println("TOPIC - NEW CONSUMER", msg)
 	}
 
-	return model, tea.Batch(
-		adapterCmd,
-	)
+	return model, cmds.Build()
 }
 
 func (model TopicsModel) View() string {

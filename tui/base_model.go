@@ -96,20 +96,17 @@ func (model *BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	adapterMsg, adapterCmd := model.adapter.Message(msg)
-	if adapterMsg != nil {
-		switch adapterMsg := adapterMsg.(type) {
-		case client.CreateConsumerResult:
-			log.Println("BASE - CONSUMER", adapterMsg)
-		}
+	cmds.AddCmd(adapterCmd)
+	switch adapterMsg := adapterMsg.(type) {
+	case client.CreateConsumerResult:
+		log.Println("BASE - CONSUMER", adapterMsg)
 	}
 
 	var topicsCmd tea.Cmd
 	model.topicsModel, topicsCmd = model.topicsModel.Update(msg)
+	cmds.AddCmd(topicsCmd)
 
-	return model, tea.Batch(
-		adapterCmd,
-		topicsCmd,
-	)
+	return model, cmds.Build()
 }
 
 func (model BaseModel) View() string {

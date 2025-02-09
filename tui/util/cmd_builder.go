@@ -13,7 +13,9 @@ func NewCommandBuilder() CommandBuilder {
 }
 
 func (builder *CommandBuilder) AddCmd(cmd tea.Cmd) {
-	builder.cmds = append(builder.cmds, cmd)
+	if cmd != nil {
+		builder.cmds = append(builder.cmds, cmd)
+	}
 }
 
 func (builder CommandBuilder) Build() tea.Cmd {
