@@ -85,6 +85,7 @@ func (model BaseModel) Init() tea.Cmd {
 }
 
 func (model *BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	cmds := util.NewCommandBuilder()
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -94,7 +95,7 @@ func (model *BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	adapterMsg, adapterCmd := model.adapter.Poll(msg)
+	adapterMsg, adapterCmd := model.adapter.Message(msg)
 	if adapterMsg != nil {
 		switch adapterMsg := adapterMsg.(type) {
 		case client.CreateConsumerResult:

@@ -37,7 +37,7 @@ func (model TopicsModel) Init() tea.Cmd {
 }
 
 func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	msg, adapterCmd := model.adapter.Poll(msg)
+	msg, adapterCmd := model.adapter.Message(msg)
 	switch msg := msg.(type) {
 	case client.CreateConsumerResult:
 		log.Println("TOPIC - NEW CONSUMER", msg)

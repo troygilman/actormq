@@ -39,12 +39,10 @@ func (adapter Adapter) Init() tea.Cmd {
 	return pollMessages(adapter.pid, adapter.msgs)
 }
 
-func (adapter Adapter) Poll(msg tea.Msg) (tea.Msg, tea.Cmd) {
+func (adapter Adapter) Message(msg tea.Msg) (tea.Msg, tea.Cmd) {
 	switch msg := msg.(type) {
 	case Message:
 		if msg.pid == adapter.pid {
-			// log.Println(adapter.pid.String(), "Received message", msg.msg)
-			log.Println(adapter.pid.String(), "Handling msg")
 			return msg.msg, pollMessages(adapter.pid, adapter.msgs)
 		}
 	}
