@@ -4,7 +4,9 @@ go 1.22.0
 
 require (
 	github.com/anthdm/hollywood v1.0.3
+	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v1.3.0
+	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/hajimehoshi/ebiten/v2 v2.8.6
 	google.golang.org/protobuf v1.32.0
 )
@@ -14,7 +16,6 @@ replace github.com/anthdm/hollywood => github.com/troygilman/hollywood v1.0.2
 require (
 	github.com/DataDog/gostackparse v0.7.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/charmbracelet/lipgloss v1.0.0 // indirect
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/ebitengine/gomobile v0.0.0-20240911145611-4856209ac325 // indirect
