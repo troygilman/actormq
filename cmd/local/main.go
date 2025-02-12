@@ -17,10 +17,9 @@ func main() {
 		panic(err)
 	}
 
-	discoveryPID := engine.Spawn(cluster.NewDiscovery(), "discovery")
+	discoveryPID := engine.Spawn(cluster.NewDiscovery(cluster.DiscoveryConfig{}), "discovery")
 
 	config := cluster.PodConfig{
-		Topics:    []string{"test", "test1", "test2"},
 		Discovery: discoveryPID,
 		Logger:    slog.New(slog.NewJSONHandler(io.Discard, nil)),
 		// Logger: slog.Default(),

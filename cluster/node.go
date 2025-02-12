@@ -17,6 +17,7 @@ type (
 type NodeConfig struct {
 	Topic               string
 	DiscoveryPID        *actor.PID
+	StateMachine        *actor.PID
 	Logger              *slog.Logger
 	ElectionMinServers  uint64
 	ElectionMinInterval time.Duration
@@ -165,7 +166,7 @@ func (node *nodeActor) handleAppendEntries(act *actor.Context, msg *AppendEntrie
 	defer func() {
 		result.Term = node.currentTerm
 		act.Send(act.Sender(), result)
-		node.config.Logger.Info("handleAppendEntries", "pid", act.PID(), "sender", act.Sender(), "msg", msg, "result", result)
+		node.config.Logger.Debug("handleAppendEntries", "pid", act.PID(), "sender", act.Sender(), "msg", msg, "result", result)
 	}()
 
 	if msg.Term == node.currentTerm && pidEquals(node.leader, act.PID()) {
@@ -221,7 +222,7 @@ func (node *nodeActor) handleAppendEntries(act *actor.Context, msg *AppendEntrie
 }
 
 func (node *nodeActor) handleAppendEntriesResult(act *actor.Context, msg *AppendEntriesResult) {
-	node.config.Logger.Info("handleAppendEntriesResult", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
+	node.config.Logger.Debug("handleAppendEntriesResult", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
 	metadata, ok := node.nodes[act.Sender().LookupKey()]
 	if !ok {
 		node.config.Logger.Error("handleAppendEntriesResult", "pid", act.PID(), "sender", act.Sender(), "msg", msg, "error", errors.New("could not find PID"))
@@ -398,7 +399,10 @@ func (node *nodeActor) updateStateMachine(act *actor.Context) {
 }
 
 func (node *nodeActor) applyMessage(act *actor.Context, msg *Message) {
-	act.Send(act.Parent(), &ConsumerEnvelope{
+	_, err := act.Request(node.config.StateMachine, &ConsumerEnvelope{
 		Message: msg,
-	})
+	}, time.Second).Result()
+	if err != nil {
+		panic(err)
+	}
 }

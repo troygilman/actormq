@@ -1,9 +1,11 @@
 package client
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
+	"github.com/troygilman/actormq/cluster"
 )
 
 type heartbeatTimeout struct{}
@@ -22,6 +24,7 @@ type clientActor struct {
 	nodes             map[string]*nodeMetadata
 	leader            *actor.PID
 	heartbeatRepeater actor.SendRepeater
+	clusterState      *cluster.ClusterState
 }
 
 func NewClient(config ClientConfig) actor.Producer {
@@ -65,9 +68,12 @@ func (client *clientActor) Receive(act *actor.Context) {
 		})
 
 	case CreateProducer:
+		slog.Default().Info("Create producer", "topic", msg.ProducerConfig.Topic)
 		act.Respond(CreateProducerResult{
 			PID: act.SpawnChild(NewProducer(msg.ProducerConfig, client.config.Nodes), "producer"),
 		})
+
+	case *cluster.ClusterState:
 
 	}
 }
@@ -75,5 +81,6 @@ func (client *clientActor) Receive(act *actor.Context) {
 func (client *clientActor) sendHeartbeat(act *actor.Context) {
 	for _, node := range client.nodes {
 		act.Send(node.pid, &actor.Ping{})
+		act.Send(node.pid, &cluster.GetClusterState{})
 	}
 }

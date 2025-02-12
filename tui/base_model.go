@@ -1,12 +1,11 @@
 package tui
 
 import (
-	"io"
 	"log"
 	"log/slog"
+	"time"
 
 	"github.com/anthdm/hollywood/actor"
-	"github.com/anthdm/hollywood/remote"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/troygilman/actormq/client"
 	"github.com/troygilman/actormq/cluster"
@@ -19,7 +18,7 @@ func Run() error {
 		return err
 	}
 
-	file, err := tea.LogToFile("tmp/application.log", "")
+	file, err := tea.LogToFile("tmp/tui.log", "")
 	if err != nil {
 		return err
 	}
@@ -37,13 +36,16 @@ func NewBaseModel() (*BaseModel, error) {
 		return nil, err
 	}
 
-	discovery := engine.Spawn(cluster.NewDiscovery(), "discovery")
+	slog.Default().Info("TEST")
+
+	discovery := engine.Spawn(cluster.NewDiscovery(cluster.DiscoveryConfig{
+		Topics: []string{},
+		Logger: slog.Default(),
+	}), "discovery")
 
 	config := cluster.PodConfig{
-		Topics:    []string{"test", "test1", "test2"},
 		Discovery: discovery,
-		Logger:    slog.New(slog.NewJSONHandler(io.Discard, nil)),
-		// Logger: slog.Default(),
+		Logger:    slog.Default(),
 	}
 
 	pods := []*actor.PID{
@@ -52,15 +54,16 @@ func NewBaseModel() (*BaseModel, error) {
 		engine.Spawn(cluster.NewPod(config), "pod"),
 	}
 
-	client := engine.Spawn(client.NewClient(client.ClientConfig{Nodes: pods}), "client")
+	time.Sleep(time.Second)
+	clientPID := engine.Spawn(client.NewClient(client.ClientConfig{Nodes: pods}), "client")
 
 	adapter := util.NewAdapter(engine, util.BasicAdapterFunc)
 
 	return &BaseModel{
 		engine:      engine,
-		client:      client,
+		client:      clientPID,
 		adapter:     adapter,
-		topicsModel: NewTopicsModel(engine, client),
+		topicsModel: NewTopicsModel(engine, clientPID),
 	}, nil
 }
 
@@ -75,12 +78,6 @@ func (model BaseModel) Init() tea.Cmd {
 	return tea.Batch(
 		model.adapter.Init(),
 		model.topicsModel.Init(),
-		model.adapter.Send(model.client, client.CreateConsumer{
-			ConsumerConfig: client.ConsumerConfig{
-				Topic:        "test",
-				Deserializer: remote.ProtoSerializer{},
-			},
-		}),
 	)
 }
 

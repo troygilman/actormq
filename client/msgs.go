@@ -21,3 +21,7 @@ type CreateProducerResult struct {
 type ProduceMessage struct {
 	Message any
 }
+
+type ConsumeMessage struct {
+	Message any
+}

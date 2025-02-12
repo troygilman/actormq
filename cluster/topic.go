@@ -19,7 +19,7 @@ type topicActor struct {
 	consumers   map[uint64]*actor.PID
 }
 
-func NewTopic(config TopicConfig) actor.Producer {
+func NewTopicActor(config TopicConfig) actor.Producer {
 	return func() actor.Receiver {
 		return &topicActor{
 			config: config,
@@ -37,6 +37,7 @@ func (topic *topicActor) Receive(act *actor.Context) {
 			WithDiscoveryPID(topic.config.Discovery).
 			WithLogger(topic.config.Logger)
 		config.Topic = topic.config.Topic
+		config.StateMachine = act.PID()
 		topic.messagesPID = act.SpawnChild(NewNode(config), "node")
 		// topic.consumerPID = act.SpawnChild(NewRaftNode(NewRaftNodeConfig().
 		// 	WithDiscoveryPID(topic.config.Discovery).
@@ -47,12 +48,14 @@ func (topic *topicActor) Receive(act *actor.Context) {
 		act.Send(act.Sender(), &actor.Pong{})
 
 	case *Envelope:
+		topic.config.Logger.Info("Received msg")
 		act.Engine().SendWithSender(topic.messagesPID, msg, act.Sender())
 
 	case *ConsumerEnvelope:
 		for _, pid := range topic.consumers {
 			act.Send(pid, msg)
 		}
+		act.Respond(&ConsumerEnvelopeAck{})
 
 	case *RegisterConsumer:
 		pid := PIDToActorPID(msg.PID)
@@ -64,6 +67,7 @@ func (topic *topicActor) Receive(act *actor.Context) {
 			})
 			return
 		}
+		topic.config.Logger.Info("Registering consumer", "topic", topic.config.Topic, "pid", pid.String())
 		topic.consumers[key] = pid
 		act.Respond(&RegisterConsumerResult{
 			Success: true,

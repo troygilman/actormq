@@ -17,7 +17,9 @@ func main() {
 		panic(err)
 	}
 
-	engine.Spawn(cluster.NewDiscovery(), "discovery", actor.WithID("primary"))
+	engine.Spawn(cluster.NewDiscovery(cluster.DiscoveryConfig{
+		Topics: []string{"test1"},
+	}), "discovery", actor.WithID("primary"))
 
 	select {}
 }

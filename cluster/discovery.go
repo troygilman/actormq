@@ -17,26 +17,34 @@ type (
 )
 
 type DiscoveryConfig struct {
+	Topics []string
 	Logger *slog.Logger
 }
 
 type discoveryActor struct {
+	config   DiscoveryConfig
 	topics   map[string]map[uint64]struct{}
 	nodes    map[uint64]*discoveryNodeMetadata
 	repeater actor.SendRepeater
 }
 
-func NewDiscovery() actor.Producer {
+func NewDiscovery(config DiscoveryConfig) actor.Producer {
 	return func() actor.Receiver {
-		return &discoveryActor{}
+		return &discoveryActor{
+			config: config,
+		}
 	}
 }
 
 func (d *discoveryActor) Receive(act *actor.Context) {
 	switch msg := act.Message().(type) {
 	case actor.Initialized:
-		d.topics = make(map[string]map[uint64]struct{})
 		d.nodes = make(map[uint64]*discoveryNodeMetadata)
+		d.topics = make(map[string]map[uint64]struct{})
+
+		for _, topic := range d.config.Topics {
+			d.topics[topic] = make(map[uint64]struct{})
+		}
 
 	case actor.Started:
 		d.repeater = act.SendRepeat(act.PID(), sendPing{}, time.Second)

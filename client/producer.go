@@ -1,7 +1,7 @@
 package client
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
@@ -33,6 +33,7 @@ func NewProducer(config ProducerConfig, pods []*actor.PID) actor.Producer {
 func (producer *producerActor) Receive(act *actor.Context) {
 	switch msg := act.Message().(type) {
 	case ProduceMessage:
+
 		data, err := producer.config.Serializer.Serialize(msg.Message)
 		if err != nil {
 			panic(err)
@@ -44,7 +45,7 @@ func (producer *producerActor) Receive(act *actor.Context) {
 				Data:     data,
 			},
 		}
-		log.Println(envelope)
+		slog.Default().Info("Sending envelope", "envelope", envelope)
 		for {
 			result, err := handleResponse[*cluster.EnvelopeResult](act.Request(producer.leader, envelope, 10*time.Second))
 			if err != nil {

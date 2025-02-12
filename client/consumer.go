@@ -1,7 +1,6 @@
 package client
 
 import (
-	"log"
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
@@ -11,6 +10,7 @@ import (
 
 type ConsumerConfig struct {
 	Topic        string
+	PID          *actor.PID
 	Deserializer remote.Deserializer
 }
 
@@ -50,7 +50,9 @@ func (consumer *consumerActor) Receive(act *actor.Context) {
 		if err != nil {
 			panic(err)
 		}
-		log.Printf("%T - %+v\n", message, message)
 
+		act.Send(consumer.config.PID, ConsumeMessage{
+			Message: message,
+		})
 	}
 }

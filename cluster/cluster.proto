@@ -11,6 +11,10 @@ message ConsumerEnvelope {
     Message message = 1;
 }
 
+message ConsumerEnvelopeAck {
+
+}
+
 message EnvelopeResult {
     bool success = 1;
     string error = 2;
@@ -72,4 +76,20 @@ message RegisterConsumer {
 message RegisterConsumerResult {
     bool success = 1;
     string error = 2;
+}
+
+message NewTopic {
+    string name = 1;
+}
+
+message GetClusterState {
+
+}
+
+message TopicState {
+    string name = 1;
+}
+
+message ClusterState {
+    repeated TopicState topics = 1;
 }
