@@ -32,7 +32,12 @@ func NewTopicsModel(engine *actor.Engine, clientPID *actor.PID) TopicsModel {
 	if result, ok := result.(client.CreateProducerResult); ok {
 		engine.Send(result.PID, client.ProduceMessage{
 			Message: &cluster.NewTopic{
-				Name: "test1",
+				Name: "test.1",
+			},
+		})
+		engine.Send(result.PID, client.ProduceMessage{
+			Message: &cluster.NewTopic{
+				Name: "test.2",
 			},
 		})
 	} else {
@@ -43,7 +48,15 @@ func NewTopicsModel(engine *actor.Engine, clientPID *actor.PID) TopicsModel {
 		engine:  engine,
 		client:  clientPID,
 		adapter: util.NewAdapter(engine, util.BasicAdapterFunc),
-		table:   table.New(table.WithWidth(20), table.WithColumns([]table.Column{{Title: "Topic", Width: 20}})),
+		table: table.New(
+			table.WithKeyMap(table.DefaultKeyMap()),
+			table.WithFocused(true),
+			table.WithWidth(30),
+			table.WithColumns([]table.Column{
+				{Title: "Topic", Width: 20},
+				{Title: "Messages", Width: 10},
+			}),
+		),
 	}
 }
 
@@ -71,9 +84,14 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := util.NewCommandBuilder()
 
 	switch msg := msg.(type) {
+	case tea.KeyMsg:
 	case tea.WindowSizeMsg:
 		model.table.SetHeight(msg.Height - 2)
 	}
+
+	var tableCmd tea.Cmd
+	model.table, tableCmd = model.table.Update(msg)
+	cmds.AddCmd(tableCmd)
 
 	msg, adapterCmd := model.adapter.Message(msg)
 	cmds.AddCmd(adapterCmd)
@@ -87,10 +105,6 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			model.table.SetRows(append(model.table.Rows(), []string{msg.Name}))
 		}
 	}
-
-	var tableCmd tea.Cmd
-	model.table, tableCmd = model.table.Update(msg)
-	cmds.AddCmd(tableCmd)
 
 	return model, cmds.Build()
 }
