@@ -43,7 +43,7 @@ func NewTopicsModel(engine *actor.Engine, clientPID *actor.PID) TopicsModel {
 		engine:  engine,
 		client:  clientPID,
 		adapter: util.NewAdapter(engine, util.BasicAdapterFunc),
-		table:   table.New(table.WithWidth(20)),
+		table:   table.New(table.WithWidth(20), table.WithColumns([]table.Column{{Title: "Topic", Width: 20}})),
 	}
 }
 
@@ -81,7 +81,11 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case client.CreateConsumerResult:
 		log.Println("TOPIC - NEW CONSUMER", msg)
 	case client.ConsumeMessage:
-		log.Println("ConsumeMessage", msg)
+		log.Printf("ConsumeMessage %T\n", msg)
+		switch msg := msg.Message.(type) {
+		case *cluster.NewTopic:
+			model.table.SetRows(append(model.table.Rows(), []string{msg.Name}))
+		}
 	}
 
 	var tableCmd tea.Cmd

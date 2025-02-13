@@ -17,6 +17,7 @@ type topicActor struct {
 	messagesPID *actor.PID
 	consumerPID *actor.PID
 	consumers   map[uint64]*actor.PID
+	envelopes   []*ConsumerEnvelope
 }
 
 func NewTopicActor(config TopicConfig) actor.Producer {
@@ -52,6 +53,7 @@ func (topic *topicActor) Receive(act *actor.Context) {
 		act.Engine().SendWithSender(topic.messagesPID, msg, act.Sender())
 
 	case *ConsumerEnvelope:
+		topic.envelopes = append(topic.envelopes, msg)
 		for _, pid := range topic.consumers {
 			act.Send(pid, msg)
 		}
@@ -72,6 +74,11 @@ func (topic *topicActor) Receive(act *actor.Context) {
 		act.Respond(&RegisterConsumerResult{
 			Success: true,
 		})
+
+		// Replay all envelopes to new consumer
+		for _, envelope := range topic.envelopes {
+			act.Send(pid, envelope)
+		}
 
 	}
 }
