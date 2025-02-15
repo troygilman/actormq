@@ -7,9 +7,10 @@ import (
 )
 
 type TopicConfig struct {
-	Topic     string
-	Discovery *actor.PID
-	Logger    *slog.Logger
+	Topic        string
+	Discovery    *actor.PID
+	Logger       *slog.Logger
+	SendMetadata bool
 }
 
 type topicActor struct {
@@ -40,10 +41,6 @@ func (topic *topicActor) Receive(act *actor.Context) {
 		config.Topic = topic.config.Topic
 		config.StateMachine = act.PID()
 		topic.messagesPID = act.SpawnChild(NewNode(config), "node")
-		// topic.consumerPID = act.SpawnChild(NewRaftNode(NewRaftNodeConfig().
-		// 	WithDiscoveryPID(topic.config.Discovery).
-		// 	WithLogger(topic.config.Logger),
-		// ), "node", actor.WithID("consumer"))
 
 	case *actor.Ping:
 		act.Send(act.Sender(), &actor.Pong{})
@@ -58,6 +55,12 @@ func (topic *topicActor) Receive(act *actor.Context) {
 			act.Send(pid, msg)
 		}
 		act.Respond(&ConsumerEnvelopeAck{})
+		if msg.IsLeader && topic.config.SendMetadata {
+			act.Send(act.PID(), &TopicMetadata{
+				TopicName:   topic.config.Topic,
+				NumMessages: uint64(len(topic.envelopes)),
+			})
+		}
 
 	case *RegisterConsumer:
 		pid := PIDToActorPID(msg.PID)

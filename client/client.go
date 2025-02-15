@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
-	"github.com/troygilman/actormq/cluster"
 )
 
 type heartbeatTimeout struct{}
@@ -24,7 +23,6 @@ type clientActor struct {
 	nodes             map[string]*nodeMetadata
 	leader            *actor.PID
 	heartbeatRepeater actor.SendRepeater
-	clusterState      *cluster.ClusterState
 }
 
 func NewClient(config ClientConfig) actor.Producer {
@@ -73,14 +71,11 @@ func (client *clientActor) Receive(act *actor.Context) {
 			PID: act.SpawnChild(NewProducer(msg.ProducerConfig, client.config.Nodes), "producer"),
 		})
 
-	case *cluster.ClusterState:
-
 	}
 }
 
 func (client *clientActor) sendHeartbeat(act *actor.Context) {
 	for _, node := range client.nodes {
 		act.Send(node.pid, &actor.Ping{})
-		act.Send(node.pid, &cluster.GetClusterState{})
 	}
 }

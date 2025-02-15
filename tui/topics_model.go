@@ -2,6 +2,7 @@ package tui
 
 import (
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
@@ -31,13 +32,13 @@ func NewTopicsModel(engine *actor.Engine, clientPID *actor.PID) TopicsModel {
 
 	if result, ok := result.(client.CreateProducerResult); ok {
 		engine.Send(result.PID, client.ProduceMessage{
-			Message: &cluster.NewTopic{
-				Name: "test.1",
+			Message: &cluster.TopicMetadata{
+				TopicName: "test.1",
 			},
 		})
 		engine.Send(result.PID, client.ProduceMessage{
-			Message: &cluster.NewTopic{
-				Name: "test.2",
+			Message: &cluster.TopicMetadata{
+				TopicName: "test.2",
 			},
 		})
 	} else {
@@ -101,8 +102,8 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case client.ConsumeMessage:
 		log.Printf("ConsumeMessage %T\n", msg)
 		switch msg := msg.Message.(type) {
-		case *cluster.NewTopic:
-			model.table.SetRows(append(model.table.Rows(), []string{msg.Name}))
+		case *cluster.TopicMetadata:
+			model.table.SetRows(append(model.table.Rows(), []string{msg.TopicName, strconv.FormatUint(msg.NumMessages, 10)}))
 		}
 	}
 

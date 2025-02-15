@@ -400,7 +400,8 @@ func (node *nodeActor) updateStateMachine(act *actor.Context) {
 
 func (node *nodeActor) applyMessage(act *actor.Context, msg *Message) {
 	_, err := act.Request(node.config.StateMachine, &ConsumerEnvelope{
-		Message: msg,
+		Message:  msg,
+		IsLeader: pidEquals(node.leader, act.PID()),
 	}, time.Second).Result()
 	if err != nil {
 		panic(err)

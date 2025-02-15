@@ -83,23 +83,30 @@ func (pod *podActor) Receive(act *actor.Context) {
 			panic(err)
 		}
 		switch msg := message.(type) {
-		case *NewTopic:
-			// TO-DO: should check if already exists
-			pod.topics[msg.Name] = act.SpawnChild(NewTopicActor(TopicConfig{
-				Topic:     msg.Name,
-				Discovery: pod.config.Discovery,
-				Logger:    pod.config.Logger,
-			}), "topic", actor.WithID(msg.Name))
+		case *TopicMetadata:
+			if _, ok := pod.topics[msg.TopicName]; !ok {
+				pod.topics[msg.TopicName] = act.SpawnChild(NewTopicActor(TopicConfig{
+					Topic:        msg.TopicName,
+					Discovery:    pod.config.Discovery,
+					Logger:       pod.config.Logger,
+					SendMetadata: true,
+				}), "topic", actor.WithID(msg.TopicName))
+			}
 		}
 		act.Respond(&ConsumerEnvelopeAck{})
 
-	case *GetClusterState:
-		result := &ClusterState{}
-		for topic := range pod.topics {
-			result.Topics = append(result.Topics, &TopicState{
-				Name: topic,
-			})
+	case *TopicMetadata:
+		data, err := pod.serializer.Serialize(msg)
+		if err != nil {
+			panic(err)
 		}
-		act.Respond(result)
+		typeName := pod.serializer.TypeName(msg)
+		internalTopic := pod.topics[TopicClusterInternalTopic]
+		act.Send(internalTopic, &Envelope{
+			Message: &Message{
+				TypeName: typeName,
+				Data:     data,
+			},
+		})
 	}
 }

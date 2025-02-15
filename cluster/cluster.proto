@@ -9,6 +9,7 @@ message Envelope {
 
 message ConsumerEnvelope {
     Message message = 1;
+    bool isLeader = 2;
 }
 
 message ConsumerEnvelopeAck {
@@ -78,18 +79,7 @@ message RegisterConsumerResult {
     string error = 2;
 }
 
-message NewTopic {
-    string name = 1;
-}
-
-message GetClusterState {
-
-}
-
-message TopicState {
-    string name = 1;
-}
-
-message ClusterState {
-    repeated TopicState topics = 1;
+message TopicMetadata {
+    string topicName = 1;
+    uint64 numMessages = 2;
 }
