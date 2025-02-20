@@ -60,5 +60,6 @@ func (producer *producerActor) Receive(act *actor.Context) {
 			}
 			break
 		}
+		act.Respond(ProduceMessageResult{})
 	}
 }

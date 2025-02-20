@@ -6,6 +6,7 @@ import (
 
 	"github.com/anthdm/hollywood/actor"
 	"github.com/anthdm/hollywood/remote"
+	"github.com/troygilman/actormq/internal"
 )
 
 const (
@@ -102,11 +103,26 @@ func (pod *podActor) Receive(act *actor.Context) {
 		}
 		typeName := pod.serializer.TypeName(msg)
 		internalTopic := pod.topics[TopicClusterInternalTopic]
-		act.Send(internalTopic, &Envelope{
-			Message: &Message{
-				TypeName: typeName,
-				Data:     data,
-			},
-		})
+		for {
+			result, err := internal.Request[*EnvelopeResult](act.Engine(), internalTopic, &Envelope{
+				Message: &Message{
+					TypeName: typeName,
+					Data:     data,
+				},
+			})
+			if err != nil {
+				panic(err)
+			}
+
+			if result.Success {
+				break
+			}
+
+			if result.Error != "" {
+				panic(result.Error)
+			}
+
+			internalTopic = PIDToActorPID(result.RedirectPID)
+		}
 	}
 }

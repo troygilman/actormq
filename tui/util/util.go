@@ -7,13 +7,12 @@ import (
 	"github.com/anthdm/hollywood/actor"
 	"github.com/anthdm/hollywood/remote"
 	"github.com/troygilman/actormq/client"
-	"github.com/troygilman/actormq/cluster"
 )
 
 func createProducer(engine *actor.Engine, clientPID *actor.PID, topic string) (*actor.PID, error) {
 	result, err := engine.Request(clientPID, client.CreateProducer{
 		ProducerConfig: client.ProducerConfig{
-			Topic:      cluster.TopicClusterInternalTopic,
+			Topic:      topic,
 			Serializer: remote.ProtoSerializer{},
 		},
 	}, time.Second).Result()

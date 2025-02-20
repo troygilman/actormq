@@ -22,6 +22,10 @@ type ProduceMessage struct {
 	Message any
 }
 
+type ProduceMessageResult struct {
+	Error error
+}
+
 type ConsumeMessage struct {
 	Message any
 }

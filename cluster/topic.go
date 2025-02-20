@@ -56,7 +56,7 @@ func (topic *topicActor) Receive(act *actor.Context) {
 		}
 		act.Respond(&ConsumerEnvelopeAck{})
 		if msg.IsLeader && topic.config.SendMetadata {
-			act.Send(act.PID(), &TopicMetadata{
+			act.Send(act.Parent(), &TopicMetadata{
 				TopicName:   topic.config.Topic,
 				NumMessages: uint64(len(topic.envelopes)),
 			})

@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/troygilman/actormq/client"
 	"github.com/troygilman/actormq/cluster"
+	"github.com/troygilman/actormq/internal"
 	"github.com/troygilman/actormq/tui/util"
 )
 
@@ -20,29 +21,49 @@ var baseStyle = lipgloss.NewStyle().
 	BorderForeground(lipgloss.Color("240"))
 
 func NewTopicsModel(engine *actor.Engine, clientPID *actor.PID) TopicsModel {
-	result, err := engine.Request(clientPID, client.CreateProducer{
-		ProducerConfig: client.ProducerConfig{
-			Topic:      cluster.TopicClusterInternalTopic,
-			Serializer: remote.ProtoSerializer{},
-		},
-	}, time.Second).Result()
-	if err != nil {
-		panic(err)
-	}
+	{
+		result, err := internal.Request[client.CreateProducerResult](engine, clientPID, client.CreateProducer{
+			ProducerConfig: client.ProducerConfig{
+				Topic:      cluster.TopicClusterInternalTopic,
+				Serializer: remote.ProtoSerializer{},
+			},
+		})
+		if err != nil {
+			panic(err)
+		}
 
-	if result, ok := result.(client.CreateProducerResult); ok {
-		engine.Send(result.PID, client.ProduceMessage{
+		internal.Request[client.ProduceMessageResult](engine, result.PID, client.ProduceMessage{
 			Message: &cluster.TopicMetadata{
 				TopicName: "test.1",
 			},
 		})
-		engine.Send(result.PID, client.ProduceMessage{
+
+		internal.Request[client.ProduceMessageResult](engine, result.PID, client.ProduceMessage{
 			Message: &cluster.TopicMetadata{
 				TopicName: "test.2",
 			},
 		})
-	} else {
-		panic("could not create consumer")
+	}
+
+	{
+		time.Sleep(time.Second)
+		result, err := internal.Request[client.CreateProducerResult](engine, clientPID, client.CreateProducer{
+			ProducerConfig: client.ProducerConfig{
+				Topic:      "test.1",
+				Serializer: remote.ProtoSerializer{},
+			},
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		go func() {
+			for {
+				engine.Send(result.PID, client.ProduceMessage{
+					Message: &actor.Ping{},
+				})
+			}
+		}()
 	}
 
 	return TopicsModel{
@@ -106,10 +127,12 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg := msg.Message.(type) {
 		case *cluster.TopicMetadata:
 			if index, ok := model.topics[msg.TopicName]; ok {
-				model.table.Rows()[index] = []string{
+				rows := model.table.Rows()
+				rows[index] = []string{
 					msg.TopicName,
 					strconv.FormatUint(msg.NumMessages, 10),
 				}
+				model.table.SetRows(rows)
 			} else {
 				model.table.SetRows(append(model.table.Rows(), []string{
 					msg.TopicName,
