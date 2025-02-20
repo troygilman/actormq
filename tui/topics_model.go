@@ -58,6 +58,7 @@ func NewTopicsModel(engine *actor.Engine, clientPID *actor.PID) TopicsModel {
 				{Title: "Messages", Width: 10},
 			}),
 		),
+		topics: make(map[string]int),
 	}
 }
 
@@ -66,6 +67,7 @@ type TopicsModel struct {
 	client  *actor.PID
 	adapter util.Adapter
 	table   table.Model
+	topics  map[string]int
 }
 
 func (model TopicsModel) Init() tea.Cmd {
@@ -103,7 +105,18 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		log.Printf("ConsumeMessage %T\n", msg)
 		switch msg := msg.Message.(type) {
 		case *cluster.TopicMetadata:
-			model.table.SetRows(append(model.table.Rows(), []string{msg.TopicName, strconv.FormatUint(msg.NumMessages, 10)}))
+			if index, ok := model.topics[msg.TopicName]; ok {
+				model.table.Rows()[index] = []string{
+					msg.TopicName,
+					strconv.FormatUint(msg.NumMessages, 10),
+				}
+			} else {
+				model.table.SetRows(append(model.table.Rows(), []string{
+					msg.TopicName,
+					strconv.FormatUint(msg.NumMessages, 10),
+				}))
+				model.topics[msg.TopicName] = len(model.table.Rows()) - 1
+			}
 		}
 	}
 
