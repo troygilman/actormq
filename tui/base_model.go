@@ -6,6 +6,7 @@ import (
 
 	"github.com/anthdm/hollywood/actor"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/troygilman/actormq/client"
 	"github.com/troygilman/actormq/cluster"
 	"github.com/troygilman/actormq/tui/util"
@@ -63,6 +64,7 @@ func NewBaseModel() (*BaseModel, error) {
 		client:      clientPID,
 		adapter:     adapter,
 		topicsModel: NewTopicsModel(engine, clientPID),
+		tabsModel:   NewTabsModel(engine, clientPID),
 	}, nil
 }
 
@@ -71,12 +73,14 @@ type BaseModel struct {
 	client      *actor.PID
 	adapter     util.Adapter
 	topicsModel tea.Model
+	tabsModel   tea.Model
 }
 
 func (model BaseModel) Init() tea.Cmd {
 	return tea.Batch(
 		model.adapter.Init(),
 		model.topicsModel.Init(),
+		model.tabsModel.Init(),
 	)
 }
 
@@ -95,6 +99,10 @@ func (model *BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	model.topicsModel, topicsCmd = model.topicsModel.Update(msg)
 	cmds.AddCmd(topicsCmd)
 
+	var tabsCmd tea.Cmd
+	model.tabsModel, tabsCmd = model.tabsModel.Update(msg)
+	cmds.AddCmd(tabsCmd)
+
 	adapterMsg, adapterCmd := model.adapter.Message(msg)
 	cmds.AddCmd(adapterCmd)
 	switch adapterMsg.(type) {
@@ -104,5 +112,5 @@ func (model *BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (model BaseModel) View() string {
-	return model.topicsModel.View()
+	return lipgloss.JoinHorizontal(lipgloss.Top, model.topicsModel.View(), model.tabsModel.View())
 }

@@ -62,6 +62,7 @@ func NewTopicsModel(engine *actor.Engine, clientPID *actor.PID) TopicsModel {
 				engine.Send(result.PID, client.ProduceMessage{
 					Message: &actor.Ping{},
 				})
+				time.Sleep(time.Millisecond)
 			}
 		}()
 	}
@@ -109,6 +110,12 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		switch msg.String() {
+		case "c":
+			cmds.AddCmd(util.MessageCmd(CreateConsumerMsg{
+				Topic: model.table.Rows()[model.table.Cursor()][0],
+			}))
+		}
 	case tea.WindowSizeMsg:
 		model.table.SetHeight(msg.Height - 2)
 	}
@@ -134,7 +141,7 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				model.table.SetRows(rows)
 			} else {
-				model.table.SetRows(append(model.table.Rows(), []string{
+				model.table.SetRows(append(model.table.Rows(), table.Row{
 					msg.TopicName,
 					strconv.FormatUint(msg.NumMessages, 10),
 				}))
