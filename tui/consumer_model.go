@@ -17,9 +17,13 @@ func NewConsumerModel(engine *actor.Engine, client *actor.PID, topic string) tea
 		client:  client,
 		topic:   topic,
 		adapter: util.NewAdapter(engine, util.BasicAdapterFunc),
-		table: table.New(table.WithWidth(100), table.WithColumns([]table.Column{
-			{Title: "Message", Width: 100},
-		})),
+		table: table.New(
+			table.WithWidth(100),
+			table.WithColumns([]table.Column{
+				{Title: "Offset", Width: 10},
+				{Title: "Message", Width: 90},
+			}),
+		),
 	}
 }
 
@@ -64,7 +68,13 @@ func (model ConsumerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds.AddCmd(adapterCmd)
 	switch msg := msg.(type) {
 	case client.ConsumeMessage:
-		model.table.SetRows(append(model.table.Rows(), table.Row{fmt.Sprintf("%T", msg.Message)}))
+		rows := model.table.Rows()
+		rows = append([]table.Row{{
+			fmt.Sprintf("%d", len(model.table.Rows())),
+			fmt.Sprintf("%T", msg.Message),
+		}}, rows...)
+		model.table.SetRows(rows)
+		model.table.SetCursor(model.table.Cursor() + 1)
 	}
 
 	return model, cmds.Build()

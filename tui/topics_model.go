@@ -62,7 +62,7 @@ func NewTopicsModel(engine *actor.Engine, clientPID *actor.PID) tea.Model {
 				engine.Send(result.PID, client.ProduceMessage{
 					Message: &actor.Ping{},
 				})
-				time.Sleep(1000 * time.Millisecond)
+				time.Sleep(100 * time.Millisecond)
 			}
 		}()
 	}
