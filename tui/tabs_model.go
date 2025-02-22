@@ -14,9 +14,10 @@ func NewTabsModel(engine *actor.Engine, client *actor.PID) tea.Model {
 }
 
 type TabsModel struct {
-	engine *actor.Engine
-	client *actor.PID
-	tabs   []tea.Model
+	engine      *actor.Engine
+	client      *actor.PID
+	tabs        []tea.Model
+	selectedTab int
 }
 
 func (model TabsModel) Init() tea.Cmd {
@@ -24,6 +25,7 @@ func (model TabsModel) Init() tea.Cmd {
 }
 
 func (model TabsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	cmds := util.NewCommandBuilder()
 
 	switch msg := msg.(type) {
@@ -31,20 +33,25 @@ func (model TabsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		consumerModel := NewConsumerModel(model.engine, model.client, msg.Topic)
 		model.tabs = append(model.tabs, consumerModel)
 		cmds.AddCmd(consumerModel.Init())
+	case FocusMsg:
+		if len(model.tabs) > 0 {
+			model.tabs[model.selectedTab], cmd = model.tabs[model.selectedTab].Update(msg)
+			cmds.AddCmd(cmd)
+		}
 	}
 
 	for index, tab := range model.tabs {
-		var tabCmd tea.Cmd
-		model.tabs[index], tabCmd = tab.Update(msg)
-		cmds.AddCmd(tabCmd)
+		model.tabs[index], cmd = tab.Update(msg)
+		cmds.AddCmd(cmd)
 	}
 
 	return model, cmds.Build()
 }
 
 func (model TabsModel) View() string {
+	var view string
 	if len(model.tabs) > 0 {
-		return model.tabs[0].View()
+		view = model.tabs[0].View()
 	}
-	return ""
+	return baseStyle.Render(view)
 }

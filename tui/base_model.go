@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"log"
 	"log/slog"
 	"time"
 
@@ -60,20 +61,22 @@ func NewBaseModel() (*BaseModel, error) {
 	adapter := util.NewAdapter(engine, util.BasicAdapterFunc)
 
 	return &BaseModel{
-		engine:      engine,
-		client:      clientPID,
-		adapter:     adapter,
-		topicsModel: NewTopicsModel(engine, clientPID),
-		tabsModel:   NewTabsModel(engine, clientPID),
+		engine:          engine,
+		client:          clientPID,
+		adapter:         adapter,
+		topicsModel:     NewTopicsModel(engine, clientPID),
+		tabsModel:       NewTabsModel(engine, clientPID),
+		focusedOnTopics: true,
 	}, nil
 }
 
 type BaseModel struct {
-	engine      *actor.Engine
-	client      *actor.PID
-	adapter     util.Adapter
-	topicsModel tea.Model
-	tabsModel   tea.Model
+	engine          *actor.Engine
+	client          *actor.PID
+	adapter         util.Adapter
+	topicsModel     tea.Model
+	tabsModel       tea.Model
+	focusedOnTopics bool
 }
 
 func (model BaseModel) Init() tea.Cmd {
@@ -84,27 +87,36 @@ func (model BaseModel) Init() tea.Cmd {
 	)
 }
 
-func (model *BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (model BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	cmds := util.NewCommandBuilder()
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		log.Println(msg.String())
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return model, tea.Quit
+		case "tab":
+			model.focusedOnTopics = !model.focusedOnTopics
+			log.Println("FocusedOnTopics", model.focusedOnTopics)
+
+			model.topicsModel, cmd = model.topicsModel.Update(FocusMsg{Focus: model.focusedOnTopics})
+			cmds.AddCmd(cmd)
+
+			model.tabsModel, cmd = model.tabsModel.Update(FocusMsg{Focus: !model.focusedOnTopics})
+			cmds.AddCmd(cmd)
 		}
 	}
 
-	var topicsCmd tea.Cmd
-	model.topicsModel, topicsCmd = model.topicsModel.Update(msg)
-	cmds.AddCmd(topicsCmd)
+	model.topicsModel, cmd = model.topicsModel.Update(msg)
+	cmds.AddCmd(cmd)
 
-	var tabsCmd tea.Cmd
-	model.tabsModel, tabsCmd = model.tabsModel.Update(msg)
-	cmds.AddCmd(tabsCmd)
+	model.tabsModel, cmd = model.tabsModel.Update(msg)
+	cmds.AddCmd(cmd)
 
-	adapterMsg, adapterCmd := model.adapter.Message(msg)
-	cmds.AddCmd(adapterCmd)
+	adapterMsg, cmd := model.adapter.Message(msg)
+	cmds.AddCmd(cmd)
 	switch adapterMsg.(type) {
 	}
 

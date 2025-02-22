@@ -33,6 +33,7 @@ type ConsumerModel struct {
 
 func (model ConsumerModel) Init() tea.Cmd {
 	return tea.Batch(
+		tea.WindowSize(),
 		model.adapter.Init(),
 		model.adapter.Send(model.client, client.CreateConsumer{
 			ConsumerConfig: client.ConsumerConfig{
@@ -45,7 +46,19 @@ func (model ConsumerModel) Init() tea.Cmd {
 }
 
 func (model ConsumerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	cmds := util.NewCommandBuilder()
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+	case tea.WindowSizeMsg:
+		model.table.SetHeight(msg.Height - 2)
+	case FocusMsg:
+		model.table = util.SetTableFocus(model.table, msg.Focus)
+	}
+
+	model.table, cmd = model.table.Update(msg)
+	cmds.AddCmd(cmd)
 
 	msg, adapterCmd := model.adapter.Message(msg)
 	cmds.AddCmd(adapterCmd)

@@ -20,7 +20,7 @@ var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
 
-func NewTopicsModel(engine *actor.Engine, clientPID *actor.PID) TopicsModel {
+func NewTopicsModel(engine *actor.Engine, clientPID *actor.PID) tea.Model {
 	{
 		result, err := internal.Request[client.CreateProducerResult](engine, clientPID, client.CreateProducer{
 			ProducerConfig: client.ProducerConfig{
@@ -62,7 +62,7 @@ func NewTopicsModel(engine *actor.Engine, clientPID *actor.PID) TopicsModel {
 				engine.Send(result.PID, client.ProduceMessage{
 					Message: &actor.Ping{},
 				})
-				time.Sleep(time.Millisecond)
+				time.Sleep(1000 * time.Millisecond)
 			}
 		}()
 	}
@@ -118,6 +118,8 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.WindowSizeMsg:
 		model.table.SetHeight(msg.Height - 2)
+	case FocusMsg:
+		model.table = util.SetTableFocus(model.table, msg.Focus)
 	}
 
 	var tableCmd tea.Cmd
