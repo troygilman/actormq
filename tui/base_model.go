@@ -97,9 +97,8 @@ func (model BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return model, tea.Quit
-		case "tab":
+		case "ctrl+t":
 			model.focusedOnTopics = !model.focusedOnTopics
-			log.Println("FocusedOnTopics", model.focusedOnTopics)
 
 			model.topicsModel, cmd = model.topicsModel.Update(FocusMsg{Focus: model.focusedOnTopics})
 			cmds.AddCmd(cmd)

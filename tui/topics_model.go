@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"log"
 	"strconv"
 	"time"
 
@@ -130,9 +129,7 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds.AddCmd(adapterCmd)
 	switch msg := msg.(type) {
 	case client.CreateConsumerResult:
-		log.Println("TOPIC - NEW CONSUMER", msg)
 	case client.ConsumeMessage:
-		log.Printf("ConsumeMessage %T\n", msg)
 		switch msg := msg.Message.(type) {
 		case *cluster.TopicMetadata:
 			if index, ok := model.topics[msg.TopicName]; ok {

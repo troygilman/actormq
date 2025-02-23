@@ -1,8 +1,6 @@
 package util
 
 import (
-	"log"
-
 	"github.com/anthdm/hollywood/actor"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -51,9 +49,7 @@ func (adapter Adapter) Message(msg tea.Msg) (tea.Msg, tea.Cmd) {
 
 func pollMessages(pid *actor.PID, msgs <-chan tea.Msg) tea.Cmd {
 	return func() tea.Msg {
-		log.Println(pid.String(), "Polling messages...")
 		msg := <-msgs
-		log.Println(pid.String(), "Received message", msg)
 		return Message{
 			msg: msg,
 			pid: pid,
