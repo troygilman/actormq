@@ -45,6 +45,10 @@ func (model TabsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			model.selectedTab = min(model.selectedTab+1, len(model.tabs)-1)
 		case "<":
 			model.selectedTab = max(model.selectedTab-1, 0)
+		case "D":
+			model.tabs = append(model.tabs[:model.selectedTab], model.tabs[model.selectedTab+1:]...)
+			model.selectedTab = min(model.selectedTab, len(model.tabs)-1)
+			model.selectedTab = max(model.selectedTab, 0)
 		}
 	case tea.WindowSizeMsg:
 		model.window = msg
