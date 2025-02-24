@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"log"
-
 	"github.com/anthdm/hollywood/actor"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -10,7 +8,11 @@ import (
 )
 
 var (
-	tabStyle = lipgloss.NewStyle().Border(lipgloss.NormalBorder())
+	tabStyle = lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		Foreground(lipgloss.Color("240")).
+		BorderForeground(lipgloss.Color("240")).
+		Padding(0, 1)
 )
 
 func NewTabsModel(engine *actor.Engine, client *actor.PID) tea.Model {
@@ -25,6 +27,7 @@ type TabsModel struct {
 	client      *actor.PID
 	tabs        []*tabData
 	selectedTab int
+	window      tea.WindowSizeMsg
 }
 
 func (model TabsModel) Init() tea.Cmd {
@@ -37,13 +40,14 @@ func (model TabsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		log.Println(msg.String())
 		switch msg.String() {
-		case "ctrl+l":
+		case ">":
 			model.selectedTab = min(model.selectedTab+1, len(model.tabs)-1)
-		case "ctrl+h":
+		case "<":
 			model.selectedTab = max(model.selectedTab-1, 0)
 		}
+	case tea.WindowSizeMsg:
+		model.window = msg
 	}
 
 	switch msg := msg.(type) {
@@ -75,23 +79,35 @@ func (model TabsModel) View() string {
 	if len(model.tabs) > 0 {
 		view = model.tabs[model.selectedTab].model.View()
 	}
-	return baseStyle.Render(
-		lipgloss.JoinVertical(
-			lipgloss.Left,
-			model.tabsView(),
-			view,
-		),
-	)
+	return lipgloss.NewStyle().
+		Width(model.window.Width).
+		Height(model.window.Height).
+		MaxWidth(model.window.Width).
+		MaxHeight(model.window.Height).
+		Render(
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				lipgloss.NewStyle().MaxWidth(model.window.Width).Render(model.tabsView()),
+				view,
+			),
+		)
 }
 
 func (model TabsModel) tabsView() string {
 	tabs := []string{}
+	length := 0
 	for idx, tab := range model.tabs {
 		style := tabStyle
 		if idx == model.selectedTab {
-			style = style.Foreground(lipgloss.Color("10"))
+			style = style.Foreground(lipgloss.Color("255")).BorderForeground(lipgloss.Color("255"))
 		}
-		tabs = append(tabs, style.Render(tab.title))
+		renderedTab := style.Render(tab.title)
+		renderedTabWidth := lipgloss.Width(renderedTab)
+		if length+renderedTabWidth > model.window.Width {
+			break
+		}
+		tabs = append(tabs, renderedTab)
+		length += renderedTabWidth
 	}
 	return lipgloss.JoinHorizontal(lipgloss.Left, tabs...)
 }

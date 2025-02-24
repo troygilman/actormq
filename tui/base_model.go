@@ -93,11 +93,11 @@ func (model BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		log.Println(msg.String())
+		log.Println("KeyMsg", msg.String())
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return model, tea.Quit
-		case "ctrl+t":
+		case "T":
 			model.focusedOnTopics = !model.focusedOnTopics
 
 			model.topicsModel, cmd = model.topicsModel.Update(FocusMsg{Focus: model.focusedOnTopics})
@@ -106,6 +106,20 @@ func (model BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			model.tabsModel, cmd = model.tabsModel.Update(FocusMsg{Focus: !model.focusedOnTopics})
 			cmds.AddCmd(cmd)
 		}
+	case tea.WindowSizeMsg:
+		model.topicsModel, cmd = model.topicsModel.Update(tea.WindowSizeMsg{
+			Width:  msg.Width,
+			Height: msg.Height,
+		})
+		cmds.AddCmd(cmd)
+
+		model.tabsModel, cmd = model.tabsModel.Update(tea.WindowSizeMsg{
+			Width:  msg.Width - 38,
+			Height: msg.Height - 2,
+		})
+		cmds.AddCmd(cmd)
+
+		return model, cmds.Build()
 	}
 
 	model.topicsModel, cmd = model.topicsModel.Update(msg)
@@ -123,5 +137,8 @@ func (model BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (model BaseModel) View() string {
-	return lipgloss.JoinHorizontal(lipgloss.Top, model.topicsModel.View(), model.tabsModel.View())
+	return lipgloss.JoinHorizontal(lipgloss.Top,
+		baseStyle.Render(model.topicsModel.View()),
+		baseStyle.Render(model.tabsModel.View()),
+	)
 }

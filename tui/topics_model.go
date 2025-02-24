@@ -153,5 +153,5 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (model TopicsModel) View() string {
-	return baseStyle.Render(model.table.View())
+	return model.table.View()
 }

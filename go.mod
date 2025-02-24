@@ -15,7 +15,6 @@ replace github.com/anthdm/hollywood => github.com/troygilman/hollywood v1.0.2
 
 require (
 	github.com/DataDog/gostackparse v0.7.0 // indirect
-	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
@@ -35,7 +34,6 @@ require (
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/planetscale/vtprotobuf v0.5.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/sahilm/fuzzy v0.1.1 // indirect
 	github.com/zeebo/errs v1.2.2 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	golang.org/x/net v0.17.0 // indirect

@@ -56,7 +56,7 @@ func (model ConsumerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 	case tea.WindowSizeMsg:
-		model.table.SetHeight(msg.Height - 10)
+		model.table.SetHeight(msg.Height - 3)
 	case FocusMsg:
 		model.table = util.SetTableFocus(model.table, msg.Focus)
 	}
