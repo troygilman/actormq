@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -48,9 +49,11 @@ func (client *clientActor) Receive(act *actor.Context) {
 	case actor.Started:
 		client.heartbeatRepeater = act.SendRepeat(act.PID(), heartbeatTimeout{}, time.Second)
 		client.sendHeartbeat(act)
+		act.Engine().Subscribe(act.PID())
 
 	case actor.Stopped:
 		client.heartbeatRepeater.Stop()
+		act.Engine().Unsubscribe(act.PID())
 
 	case heartbeatTimeout:
 		client.sendHeartbeat(act)
@@ -71,6 +74,11 @@ func (client *clientActor) Receive(act *actor.Context) {
 			PID: act.SpawnChild(NewProducer(msg.ProducerConfig, client.config.Nodes), "producer"),
 		})
 
+	case actor.DeadLetterEvent:
+		slog.Warn("DeadLetterEvent", "event", fmt.Sprintf("%+v", msg))
+
+	case actor.RemoteUnreachableEvent:
+		slog.Warn("RemoteUnreachableEvent", "event", fmt.Sprintf("%+v", msg))
 	}
 }
 

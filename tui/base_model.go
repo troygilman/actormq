@@ -2,22 +2,28 @@ package tui
 
 import (
 	"log"
-	"log/slog"
-	"time"
 
 	"github.com/anthdm/hollywood/actor"
+	"github.com/anthdm/hollywood/remote"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/troygilman/actormq/client"
-	"github.com/troygilman/actormq/cluster"
 	"github.com/troygilman/actormq/tui/util"
 )
 
-func Run() error {
-	model, err := NewBaseModel()
+type Config struct {
+	Pods []*actor.PID
+}
+
+func Run(config Config) error {
+	remoter := remote.New("127.0.0.1:8081", remote.NewConfig())
+
+	engine, err := actor.NewEngine(actor.NewEngineConfig().WithRemote(remoter))
 	if err != nil {
 		return err
 	}
+
+	clientPID := engine.Spawn(client.NewClient(client.ClientConfig{Nodes: config.Pods}), "client")
 
 	file, err := tea.LogToFile("tmp/tui.log", "")
 	if err != nil {
@@ -25,49 +31,23 @@ func Run() error {
 	}
 	defer file.Close()
 
-	program := tea.NewProgram(model, tea.WithAltScreen())
+	program := tea.NewProgram(NewBaseModel(engine, clientPID),
+		tea.WithAltScreen(),
+	)
 
 	_, err = program.Run()
 	return err
 }
 
-func NewBaseModel() (*BaseModel, error) {
-	engine, err := actor.NewEngine(actor.NewEngineConfig())
-	if err != nil {
-		return nil, err
-	}
-
-	slog.Default().Info("TEST")
-
-	discovery := engine.Spawn(cluster.NewDiscovery(cluster.DiscoveryConfig{
-		Topics: []string{},
-		Logger: slog.Default(),
-	}), "discovery")
-
-	config := cluster.PodConfig{
-		Discovery: discovery,
-		Logger:    slog.Default(),
-	}
-
-	pods := []*actor.PID{
-		engine.Spawn(cluster.NewPod(config), "pod"),
-		engine.Spawn(cluster.NewPod(config), "pod"),
-		engine.Spawn(cluster.NewPod(config), "pod"),
-	}
-
-	time.Sleep(time.Second)
-	clientPID := engine.Spawn(client.NewClient(client.ClientConfig{Nodes: pods}), "client")
-
-	adapter := util.NewAdapter(engine, util.BasicAdapterFunc)
-
-	return &BaseModel{
+func NewBaseModel(engine *actor.Engine, client *actor.PID) BaseModel {
+	return BaseModel{
 		engine:          engine,
-		client:          clientPID,
-		adapter:         adapter,
-		topicsModel:     NewTopicsModel(engine, clientPID),
-		tabsModel:       NewTabsModel(engine, clientPID),
+		client:          client,
+		adapter:         util.NewAdapter(engine, util.BasicAdapterFunc),
+		topicsModel:     NewTopicsModel(engine, client),
+		tabsModel:       NewTabsModel(engine, client),
 		focusedOnTopics: true,
-	}, nil
+	}
 }
 
 type BaseModel struct {

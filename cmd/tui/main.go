@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/anthdm/hollywood/actor"
 	"github.com/troygilman/actormq/tui"
 )
 
@@ -15,10 +16,16 @@ func main() {
 	defer logFile.Close()
 
 	slog.SetDefault(slog.New(slog.NewTextHandler(logFile, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+		Level: slog.LevelDebug,
 	})))
 
-	if err := tui.Run(); err != nil {
+	if err := tui.Run(tui.Config{
+		Pods: []*actor.PID{
+			actor.NewPID("127.0.0.1:8080", "pod/A"),
+			actor.NewPID("127.0.0.1:8080", "pod/B"),
+			actor.NewPID("127.0.0.1:8080", "pod/C"),
+		},
+	}); err != nil {
 		panic(err)
 	}
 }

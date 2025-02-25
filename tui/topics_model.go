@@ -110,7 +110,7 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "c":
+		case "C":
 			cmds.AddCmd(util.MessageCmd(CreateConsumerMsg{
 				Topic: model.table.Rows()[model.table.Cursor()][0],
 			}))
