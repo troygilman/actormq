@@ -8,7 +8,7 @@ message Envelope {
 }
 
 message ConsumerEnvelope {
-    Message message = 1;
+    repeated Message messages = 1;
     bool isLeader = 2;
 }
 

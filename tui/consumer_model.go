@@ -67,13 +67,15 @@ func (model ConsumerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	msg, adapterCmd := model.adapter.Message(msg)
 	cmds.AddCmd(adapterCmd)
 	switch msg := msg.(type) {
-	case client.ConsumeMessage:
-		rows := model.table.Rows()
-		rows = append(rows, table.Row{
-			fmt.Sprintf("%d", len(model.table.Rows())),
-			fmt.Sprintf("%T", msg.Message),
-		})
-		model.table.SetRows(rows)
+	case client.ConsumeMessages:
+		for _, msg := range msg.Messages {
+			rows := model.table.Rows()
+			rows = append(rows, table.Row{
+				fmt.Sprintf("%d", len(model.table.Rows())),
+				fmt.Sprintf("%T", msg),
+			})
+			model.table.SetRows(rows)
+		}
 	}
 
 	return model, cmds.Build()

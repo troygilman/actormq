@@ -129,23 +129,26 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds.AddCmd(adapterCmd)
 	switch msg := msg.(type) {
 	case client.CreateConsumerResult:
-	case client.ConsumeMessage:
-		switch msg := msg.Message.(type) {
-		case *cluster.TopicMetadata:
-			if index, ok := model.topics[msg.TopicName]; ok {
-				rows := model.table.Rows()
-				rows[index] = []string{
-					msg.TopicName,
-					strconv.FormatUint(msg.NumMessages, 10),
+	case client.ConsumeMessages:
+		for _, msg := range msg.Messages {
+			switch msg := msg.(type) {
+			case *cluster.TopicMetadata:
+				if index, ok := model.topics[msg.TopicName]; ok {
+					rows := model.table.Rows()
+					rows[index] = []string{
+						msg.TopicName,
+						strconv.FormatUint(msg.NumMessages, 10),
+					}
+					model.table.SetRows(rows)
+				} else {
+					model.table.SetRows(append(model.table.Rows(), table.Row{
+						msg.TopicName,
+						strconv.FormatUint(msg.NumMessages, 10),
+					}))
+					model.topics[msg.TopicName] = len(model.table.Rows()) - 1
 				}
-				model.table.SetRows(rows)
-			} else {
-				model.table.SetRows(append(model.table.Rows(), table.Row{
-					msg.TopicName,
-					strconv.FormatUint(msg.NumMessages, 10),
-				}))
-				model.topics[msg.TopicName] = len(model.table.Rows()) - 1
 			}
+
 		}
 	}
 

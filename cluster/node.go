@@ -148,7 +148,7 @@ func (node *nodeActor) handleEnvelope(act *actor.Context, msg *Envelope) {
 		node.pendingCommands[newLogIndex] = &commandMetadata{
 			sender: act.Sender(),
 		}
-		node.sendAppendEntriesAll(act)
+		// node.sendAppendEntriesAll(act)
 	} else {
 		var redirectPID *PID
 		if node.leader != nil {
@@ -383,10 +383,19 @@ func (node *nodeActor) updateStateMachine(act *actor.Context) {
 			}
 		}
 	}
+
+	logEntries := node.log[node.lastApplied:node.commitIndex]
+	if len(logEntries) > 0 {
+		messages := make([]*Message, len(logEntries))
+		for idx, entry := range logEntries {
+			messages[idx] = entry.Message
+		}
+		node.applyMessage(act, messages)
+	}
+
 	for node.commitIndex > node.lastApplied {
 		node.lastApplied++
 		entry := node.log[node.lastApplied-1]
-		node.applyMessage(act, entry.GetMessage())
 		command, ok := node.pendingCommands[node.lastApplied]
 		if ok {
 			act.Send(command.sender, &EnvelopeResult{
@@ -398,9 +407,10 @@ func (node *nodeActor) updateStateMachine(act *actor.Context) {
 	}
 }
 
-func (node *nodeActor) applyMessage(act *actor.Context, msg *Message) {
+func (node *nodeActor) applyMessage(act *actor.Context, msgs []*Message) {
+	node.config.Logger.Info("Applying messages", "n", len(msgs))
 	_, err := act.Request(node.config.StateMachine, &ConsumerEnvelope{
-		Message:  msg,
+		Messages: msgs,
 		IsLeader: pidEquals(node.leader, act.PID()),
 	}, time.Second).Result()
 	if err != nil {

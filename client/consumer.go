@@ -46,13 +46,17 @@ func (consumer *consumerActor) Receive(act *actor.Context) {
 		// log.Println("registered consumer")
 
 	case *cluster.ConsumerEnvelope:
-		message, err := consumer.config.Deserializer.Deserialize(msg.Message.Data, msg.Message.TypeName)
-		if err != nil {
-			panic(err)
+		messages := make([]any, len(msg.Messages))
+		for idx, msg := range msg.Messages {
+			message, err := consumer.config.Deserializer.Deserialize(msg.Data, msg.TypeName)
+			if err != nil {
+				panic(err)
+			}
+			messages[idx] = message
 		}
 
-		act.Send(consumer.config.PID, ConsumeMessage{
-			Message: message,
+		act.Send(consumer.config.PID, ConsumeMessages{
+			Messages: messages,
 		})
 	}
 }

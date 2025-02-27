@@ -78,20 +78,22 @@ func (pod *podActor) Receive(act *actor.Context) {
 		act.Engine().SendWithSender(topic, msg, act.Sender())
 
 	case *ConsumerEnvelope:
-		pod.config.Logger.Info("Consuming envelope", "msg", msg.Message)
-		message, err := pod.deserializer.Deserialize(msg.Message.Data, msg.Message.TypeName)
-		if err != nil {
-			panic(err)
-		}
-		switch msg := message.(type) {
-		case *TopicMetadata:
-			if _, ok := pod.topics[msg.TopicName]; !ok {
-				pod.topics[msg.TopicName] = act.SpawnChild(NewTopicActor(TopicConfig{
-					Topic:        msg.TopicName,
-					Discovery:    pod.config.Discovery,
-					Logger:       pod.config.Logger,
-					SendMetadata: true,
-				}), "topic", actor.WithID(msg.TopicName))
+		pod.config.Logger.Info("Consuming envelope", "msgs", msg.Messages)
+		for _, msg := range msg.Messages {
+			message, err := pod.deserializer.Deserialize(msg.Data, msg.TypeName)
+			if err != nil {
+				panic(err)
+			}
+			switch msg := message.(type) {
+			case *TopicMetadata:
+				if _, ok := pod.topics[msg.TopicName]; !ok {
+					pod.topics[msg.TopicName] = act.SpawnChild(NewTopicActor(TopicConfig{
+						Topic:        msg.TopicName,
+						Discovery:    pod.config.Discovery,
+						Logger:       pod.config.Logger,
+						SendMetadata: true,
+					}), "topic", actor.WithID(msg.TopicName))
+				}
 			}
 		}
 		act.Respond(&ConsumerEnvelopeAck{})

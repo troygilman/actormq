@@ -26,6 +26,6 @@ type ProduceMessageResult struct {
 	Error error
 }
 
-type ConsumeMessage struct {
-	Message any
+type ConsumeMessages struct {
+	Messages []any
 }
