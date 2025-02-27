@@ -61,7 +61,7 @@ func NewTopicsModel(engine *actor.Engine, clientPID *actor.PID) tea.Model {
 				engine.Send(result.PID, client.ProduceMessage{
 					Message: &actor.Ping{},
 				})
-				time.Sleep(100 * time.Millisecond)
+				time.Sleep(10 * time.Millisecond)
 			}
 		}()
 	}
@@ -116,7 +116,7 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}))
 		}
 	case tea.WindowSizeMsg:
-		model.table.SetHeight(msg.Height - 2)
+		model.table.SetHeight(msg.Height)
 	case FocusMsg:
 		model.table = util.SetTableFocus(model.table, msg.Focus)
 	}

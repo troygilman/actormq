@@ -1,7 +1,9 @@
 package tui
 
 import (
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/anthdm/hollywood/actor"
 	"github.com/anthdm/hollywood/remote"
@@ -33,6 +35,7 @@ func Run(config Config) error {
 
 	program := tea.NewProgram(NewBaseModel(engine, clientPID),
 		tea.WithAltScreen(),
+		// tea.WithFPS(120),
 	)
 
 	_, err = program.Run()
@@ -47,6 +50,7 @@ func NewBaseModel(engine *actor.Engine, client *actor.PID) BaseModel {
 		topicsModel:     NewTopicsModel(engine, client),
 		tabsModel:       NewTabsModel(engine, client),
 		focusedOnTopics: true,
+		lastFPS:         time.Now(),
 	}
 }
 
@@ -57,6 +61,9 @@ type BaseModel struct {
 	topicsModel     tea.Model
 	tabsModel       tea.Model
 	focusedOnTopics bool
+	frames          int
+	fps             float64
+	lastFPS         time.Time
 }
 
 func (model BaseModel) Init() tea.Cmd {
@@ -64,16 +71,19 @@ func (model BaseModel) Init() tea.Cmd {
 		model.adapter.Init(),
 		model.topicsModel.Init(),
 		model.tabsModel.Init(),
+		func() tea.Msg {
+			return tickMsg(time.Now())
+		},
 	)
 }
 
 func (model BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	cmds := util.NewCommandBuilder()
+	log.Printf("Update: %T - %+v\n", msg, msg)
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		log.Println("KeyMsg", msg.String())
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return model, tea.Quit
@@ -89,17 +99,32 @@ func (model BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		model.topicsModel, cmd = model.topicsModel.Update(tea.WindowSizeMsg{
 			Width:  msg.Width,
-			Height: msg.Height,
+			Height: msg.Height - 3,
 		})
 		cmds.AddCmd(cmd)
 
 		model.tabsModel, cmd = model.tabsModel.Update(tea.WindowSizeMsg{
 			Width:  msg.Width - 38,
-			Height: msg.Height - 2,
+			Height: msg.Height - 3,
 		})
 		cmds.AddCmd(cmd)
 
 		return model, cmds.Build()
+	case tickMsg:
+		model.frames++
+
+		// Calculate FPS every second
+		elapsed := time.Since(model.lastFPS)
+		if elapsed >= time.Second {
+			model.fps = float64(model.frames) / elapsed.Seconds()
+			model.frames = 0
+			model.lastFPS = time.Now()
+		}
+
+		// Continue the loop
+		return model, func() tea.Msg {
+			return tickMsg(time.Now())
+		}
 	}
 
 	model.topicsModel, cmd = model.topicsModel.Update(msg)
@@ -117,8 +142,17 @@ func (model BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (model BaseModel) View() string {
-	return lipgloss.JoinHorizontal(lipgloss.Top,
-		baseStyle.Render(model.topicsModel.View()),
-		baseStyle.Render(model.tabsModel.View()),
+	return lipgloss.JoinVertical(lipgloss.Left,
+		model.header(),
+		lipgloss.JoinHorizontal(lipgloss.Top,
+			baseStyle.Render(model.topicsModel.View()),
+			baseStyle.Render(model.tabsModel.View()),
+		),
 	)
 }
+
+func (model BaseModel) header() string {
+	return fmt.Sprintf("FPS: %.2f", model.fps)
+}
+
+type tickMsg time.Time

@@ -69,12 +69,11 @@ func (model ConsumerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case client.ConsumeMessage:
 		rows := model.table.Rows()
-		rows = append([]table.Row{{
+		rows = append(rows, table.Row{
 			fmt.Sprintf("%d", len(model.table.Rows())),
 			fmt.Sprintf("%T", msg.Message),
-		}}, rows...)
+		})
 		model.table.SetRows(rows)
-		model.table.SetCursor(model.table.Cursor() + 1)
 	}
 
 	return model, cmds.Build()

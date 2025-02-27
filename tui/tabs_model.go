@@ -41,9 +41,9 @@ func (model TabsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case ">":
+		case ">", "ctrl+right":
 			model.selectedTab = min(model.selectedTab+1, len(model.tabs)-1)
-		case "<":
+		case "<", "ctrl+left":
 			model.selectedTab = max(model.selectedTab-1, 0)
 		case "D":
 			model.tabs = append(model.tabs[:model.selectedTab], model.tabs[model.selectedTab+1:]...)
