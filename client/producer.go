@@ -1,7 +1,6 @@
 package client
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
@@ -38,6 +37,7 @@ func (producer *producerActor) Receive(act *actor.Context) {
 		if err != nil {
 			panic(err)
 		}
+
 		envelope := &cluster.Envelope{
 			Topic: producer.config.Topic,
 			Message: &cluster.Message{
@@ -45,7 +45,7 @@ func (producer *producerActor) Receive(act *actor.Context) {
 				Data:     data,
 			},
 		}
-		slog.Default().Info("Sending envelope", "envelope", envelope)
+
 		for {
 			result, err := handleResponse[*cluster.EnvelopeResult](act.Request(producer.leader, envelope, 10*time.Second))
 			if err != nil {
@@ -56,10 +56,11 @@ func (producer *producerActor) Receive(act *actor.Context) {
 					producer.leader = cluster.PIDToActorPID(result.RedirectPID)
 					continue
 				}
-				panic(result.Error)
+				time.Sleep(10 * time.Millisecond)
 			}
 			break
 		}
+
 		act.Respond(ProduceMessageResult{})
 	}
 }

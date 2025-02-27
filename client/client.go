@@ -69,7 +69,7 @@ func (client *clientActor) Receive(act *actor.Context) {
 		})
 
 	case CreateProducer:
-		slog.Default().Info("Create producer", "topic", msg.ProducerConfig.Topic)
+		// slog.Default().Info("Create producer", "topic", msg.ProducerConfig.Topic)
 		act.Respond(CreateProducerResult{
 			PID: act.SpawnChild(NewProducer(msg.ProducerConfig, client.config.Nodes), "producer"),
 		})
