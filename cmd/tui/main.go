@@ -16,7 +16,7 @@ func main() {
 	defer logFile.Close()
 
 	slog.SetDefault(slog.New(slog.NewTextHandler(logFile, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+		Level: slog.LevelInfo,
 	})))
 
 	if err := tui.Run(tui.Config{

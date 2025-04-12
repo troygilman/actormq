@@ -61,7 +61,7 @@ func NewTopicsModel(engine *actor.Engine, clientPID *actor.PID) tea.Model {
 				engine.Send(result.PID, client.ProduceMessage{
 					Message: &actor.Ping{},
 				})
-				time.Sleep(10 * time.Millisecond)
+				time.Sleep(1 * time.Millisecond)
 			}
 		}()
 	}
@@ -89,6 +89,7 @@ type TopicsModel struct {
 	adapter util.Adapter
 	table   table.Model
 	topics  map[string]int
+	counter int
 }
 
 func (model TopicsModel) Init() tea.Cmd {
@@ -133,6 +134,7 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		for _, msg := range msg.Messages {
 			switch msg := msg.(type) {
 			case *cluster.TopicMetadata:
+				model.counter++
 				if index, ok := model.topics[msg.TopicName]; ok {
 					rows := model.table.Rows()
 					rows[index] = []string{
@@ -156,5 +158,5 @@ func (model TopicsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (model TopicsModel) View() string {
-	return model.table.View()
+	return model.table.View() + strconv.Itoa(model.counter)
 }

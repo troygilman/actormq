@@ -3,8 +3,9 @@ package cluster;
 option go_package = "github.com/troygilman/actormq/cluster";
 
 message Envelope {
-    string topic = 1;
-    Message message = 2;
+    uint64 offset = 1;
+    string topic = 2;
+    Message message = 3;
 }
 
 message ConsumerEnvelope {
@@ -17,9 +18,10 @@ message ConsumerEnvelopeAck {
 }
 
 message EnvelopeResult {
-    bool success = 1;
-    string error = 2;
-    PID redirectPID = 3;
+    uint64 offset = 1;
+    bool success = 2;
+    string error = 3;
+    PID redirectPID = 4;
 }
 
 message Message {

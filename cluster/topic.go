@@ -14,11 +14,10 @@ type TopicConfig struct {
 }
 
 type topicActor struct {
-	config      TopicConfig
-	messagesPID *actor.PID
-	consumerPID *actor.PID
-	consumers   map[uint64]*actor.PID
-	envelopes   []*ConsumerEnvelope
+	config    TopicConfig
+	nodePID   *actor.PID
+	consumers map[uint64]*actor.PID
+	messages  []*Message
 }
 
 func NewTopicActor(config TopicConfig) actor.Producer {
@@ -40,17 +39,17 @@ func (topic *topicActor) Receive(act *actor.Context) {
 			WithLogger(topic.config.Logger)
 		config.Topic = topic.config.Topic
 		config.StateMachine = act.PID()
-		topic.messagesPID = act.SpawnChild(NewNode(config), "node")
+		topic.nodePID = act.SpawnChild(NewNode(config), "node")
 
 	case *actor.Ping:
 		act.Send(act.Sender(), &actor.Pong{})
 
 	case *Envelope:
-		topic.config.Logger.Info("Received msg")
-		act.Engine().SendWithSender(topic.messagesPID, msg, act.Sender())
+		topic.config.Logger.Debug("Received msg")
+		act.Engine().SendWithSender(topic.nodePID, msg, act.Sender())
 
 	case *ConsumerEnvelope:
-		topic.envelopes = append(topic.envelopes, msg)
+		topic.messages = append(topic.messages, msg.Messages...)
 		for _, pid := range topic.consumers {
 			act.Send(pid, msg)
 		}
@@ -58,7 +57,7 @@ func (topic *topicActor) Receive(act *actor.Context) {
 		if msg.IsLeader && topic.config.SendMetadata {
 			act.Send(act.Parent(), &TopicMetadata{
 				TopicName:   topic.config.Topic,
-				NumMessages: uint64(len(topic.envelopes)),
+				NumMessages: uint64(len(topic.messages)),
 			})
 		}
 
@@ -79,9 +78,9 @@ func (topic *topicActor) Receive(act *actor.Context) {
 		})
 
 		// Replay all envelopes to new consumer
-		for _, envelope := range topic.envelopes {
-			act.Send(pid, envelope)
-		}
+		act.Send(pid, &ConsumerEnvelope{
+			Messages: topic.messages,
+		})
 
 	}
 }

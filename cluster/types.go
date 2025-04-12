@@ -11,5 +11,6 @@ type nodeMetadata struct {
 }
 
 type commandMetadata struct {
-	sender *actor.PID
+	sender       *actor.PID
+	senderOffset uint64
 }

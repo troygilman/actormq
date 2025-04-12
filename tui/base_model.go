@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
@@ -80,7 +79,7 @@ func (model BaseModel) Init() tea.Cmd {
 func (model BaseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	cmds := util.NewCommandBuilder()
-	log.Printf("Update: %T - %+v\n", msg, msg)
+	// log.Printf("Update: %T - %+v\n", msg, msg)
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:

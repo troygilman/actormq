@@ -134,11 +134,11 @@ func (node *nodeActor) handleActiveNodes(act *actor.Context, msg *ActiveNodes) {
 			}
 		}
 	}
-	node.config.Logger.Info("handleActiveNodes", "msg", msg, "nodes", node.nodes)
+	node.config.Logger.Debug("handleActiveNodes", "msg", msg, "nodes", node.nodes)
 }
 
 func (node *nodeActor) handleEnvelope(act *actor.Context, msg *Envelope) {
-	node.config.Logger.Info("handleMessage", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
+	node.config.Logger.Debug("handleMessage", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
 	if pidEquals(node.leader, act.PID()) {
 		node.log = append(node.log, &LogEntry{
 			Message: msg.Message,
@@ -146,7 +146,8 @@ func (node *nodeActor) handleEnvelope(act *actor.Context, msg *Envelope) {
 		})
 		newLogIndex := uint64(len(node.log))
 		node.pendingCommands[newLogIndex] = &commandMetadata{
-			sender: act.Sender(),
+			sender:       act.Sender(),
+			senderOffset: msg.Offset,
 		}
 		// node.sendAppendEntriesAll(act)
 	} else {
@@ -156,6 +157,7 @@ func (node *nodeActor) handleEnvelope(act *actor.Context, msg *Envelope) {
 		}
 		act.Send(act.Sender(), &EnvelopeResult{
 			Success:     false,
+			Offset:      msg.Offset,
 			RedirectPID: redirectPID,
 		})
 	}
@@ -247,7 +249,7 @@ func (node *nodeActor) handleRequestVote(act *actor.Context, msg *RequestVote) {
 	defer func() {
 		result.Term = node.currentTerm
 		act.Send(act.Sender(), result)
-		node.config.Logger.Info("handleRequestVote", "pid", act.PID(), "sender", act.Sender(), "msg", msg, "result", result)
+		node.config.Logger.Debug("handleRequestVote", "pid", act.PID(), "sender", act.Sender(), "msg", msg, "result", result)
 	}()
 
 	// Condition #1
@@ -270,7 +272,7 @@ func (node *nodeActor) handleRequestVote(act *actor.Context, msg *RequestVote) {
 }
 
 func (node *nodeActor) handleRequestVoteResult(act *actor.Context, msg *RequestVoteResult) {
-	node.config.Logger.Info("handleRequestVoteResult", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
+	node.config.Logger.Debug("handleRequestVoteResult", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
 	if msg.VoteGranted && msg.Term == node.currentTerm && !pidEquals(node.leader, act.PID()) {
 		node.votes++
 		if float32(node.votes)/float32(len(node.nodes)) > 0.5 {
@@ -400,15 +402,18 @@ func (node *nodeActor) updateStateMachine(act *actor.Context) {
 		if ok {
 			act.Send(command.sender, &EnvelopeResult{
 				Success: true,
+				Offset:  command.senderOffset,
 			})
 			delete(node.pendingCommands, node.lastApplied)
 		}
-		node.config.Logger.Info("Applied message", "pid", act.PID(), "index", node.lastApplied, "msg", entry.Message)
+		node.config.Logger.Debug("Applied message", "pid", act.PID(), "index", node.lastApplied, "msg", entry.Message)
 	}
 }
 
 func (node *nodeActor) applyMessage(act *actor.Context, msgs []*Message) {
-	node.config.Logger.Info("Applying messages", "n", len(msgs))
+	if pidEquals(act.PID(), node.leader) {
+		node.config.Logger.Info("Applying messages", "n", len(msgs))
+	}
 	_, err := act.Request(node.config.StateMachine, &ConsumerEnvelope{
 		Messages: msgs,
 		IsLeader: pidEquals(node.leader, act.PID()),

@@ -10,8 +10,8 @@ import (
 var (
 	tabStyle = lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).
-		Foreground(lipgloss.Color("240")).
-		BorderForeground(lipgloss.Color("240")).
+		Foreground(lipgloss.Color("255")).
+		BorderForeground(lipgloss.Color("255")).
 		Padding(0, 1)
 )
 
@@ -103,7 +103,7 @@ func (model TabsModel) tabsView() string {
 	for idx, tab := range model.tabs {
 		style := tabStyle
 		if idx == model.selectedTab {
-			style = style.Foreground(lipgloss.Color("255")).BorderForeground(lipgloss.Color("255"))
+			style = style.Foreground(lipgloss.Color("240")).BorderForeground(lipgloss.Color("240"))
 		}
 		renderedTab := style.Render(tab.title)
 		renderedTabWidth := lipgloss.Width(renderedTab)

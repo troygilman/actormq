@@ -78,7 +78,7 @@ func (pod *podActor) Receive(act *actor.Context) {
 		act.Engine().SendWithSender(topic, msg, act.Sender())
 
 	case *ConsumerEnvelope:
-		pod.config.Logger.Info("Consuming envelope", "msgs", msg.Messages)
+		pod.config.Logger.Debug("Consuming envelope", "msgs", msg.Messages)
 		for _, msg := range msg.Messages {
 			message, err := pod.deserializer.Deserialize(msg.Data, msg.TypeName)
 			if err != nil {
