@@ -61,9 +61,10 @@ func (producer *producerActor) handleProduceMessage(act *actor.Context, msg Prod
 
 	act.Send(producer.leader, envelope)
 	producer.requests = append(producer.requests, produceRequestMetadata{
-		sender: act.Sender(),
-		offset: producer.nextOffset,
-		start:  start,
+		sender:   act.Sender(),
+		offset:   producer.nextOffset,
+		start:    start,
+		envelope: envelope,
 	})
 }
 

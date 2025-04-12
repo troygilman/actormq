@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"log"
 	"log/slog"
 
 	"github.com/anthdm/hollywood/actor"
@@ -23,7 +24,8 @@ type topicActor struct {
 func NewTopicActor(config TopicConfig) actor.Producer {
 	return func() actor.Receiver {
 		return &topicActor{
-			config: config,
+			config:   config,
+			messages: []*Message{},
 		}
 	}
 }
@@ -78,9 +80,11 @@ func (topic *topicActor) Receive(act *actor.Context) {
 		})
 
 		// Replay all envelopes to new consumer
-		act.Send(pid, &ConsumerEnvelope{
-			Messages: topic.messages,
-		})
-
+		if len(topic.messages) > 0 {
+			log.Printf("replaying %d messages to new consumer\n", len(topic.messages))
+			act.Send(pid, &ConsumerEnvelope{
+				Messages: topic.messages,
+			})
+		}
 	}
 }

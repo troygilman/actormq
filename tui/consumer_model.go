@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/anthdm/hollywood/actor"
 	"github.com/anthdm/hollywood/remote"
@@ -68,6 +69,7 @@ func (model ConsumerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds.AddCmd(adapterCmd)
 	switch msg := msg.(type) {
 	case client.ConsumeMessages:
+		log.Printf("model is consuming %d messages\n", len(msg.Messages))
 		for _, msg := range msg.Messages {
 			rows := model.table.Rows()
 			rows = append(rows, table.Row{
@@ -76,6 +78,8 @@ func (model ConsumerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			})
 			model.table.SetRows(rows)
 		}
+	default:
+		_ = msg
 	}
 
 	return model, cmds.Build()

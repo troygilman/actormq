@@ -140,6 +140,9 @@ func (node *nodeActor) handleActiveNodes(act *actor.Context, msg *ActiveNodes) {
 func (node *nodeActor) handleEnvelope(act *actor.Context, msg *Envelope) {
 	node.config.Logger.Debug("handleMessage", "pid", act.PID(), "sender", act.Sender(), "msg", msg)
 	if pidEquals(node.leader, act.PID()) {
+		if msg.Message == nil {
+			panic("received nil message")
+		}
 		node.log = append(node.log, &LogEntry{
 			Message: msg.Message,
 			Term:    node.currentTerm,
@@ -412,7 +415,7 @@ func (node *nodeActor) updateStateMachine(act *actor.Context) {
 
 func (node *nodeActor) applyMessage(act *actor.Context, msgs []*Message) {
 	if pidEquals(act.PID(), node.leader) {
-		node.config.Logger.Info("Applying messages", "n", len(msgs))
+		node.config.Logger.Info("Applying messages to topic", "topic", node.config.Topic, "n", len(msgs))
 	}
 	_, err := act.Request(node.config.StateMachine, &ConsumerEnvelope{
 		Messages: msgs,

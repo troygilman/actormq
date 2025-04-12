@@ -46,6 +46,7 @@ func (consumer *consumerActor) Receive(act *actor.Context) {
 		// log.Println("registered consumer")
 
 	case *cluster.ConsumerEnvelope:
+		// log.Printf("consumer of topic %s received envelope with %d messages\n", consumer.config.Topic, len(msg.Messages))
 		messages := make([]any, len(msg.Messages))
 		for idx, msg := range msg.Messages {
 			message, err := consumer.config.Deserializer.Deserialize(msg.Data, msg.TypeName)
